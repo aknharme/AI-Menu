@@ -1,0 +1,72 @@
+# =========================
+# Operating System Files
+# =========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# =========================
+# IDE & Workspaces
+# =========================
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+
+# =========================
+# Backend (.NET Core)
+# =========================
+api/**/bin/
+api/**/obj/
+api/**/TestResults/
+api/**/appsettings.Development.json
+api/**/appsettings.Local.json
+*.log
+
+# =========================
+# Frontend (React + Vite + Node)
+# =========================
+# Ignore node_modules across all frontend properties
+customer-web/node_modules/
+admin-web/node_modules/
+cashier-web/node_modules/
+node_modules/
+
+# Ignore build artifacts
+customer-web/dist/
+admin-web/dist/
+cashier-web/dist/
+dist/
+build/
+
+# Ignore env files (keep template env definitions if any, e.g. .env.example)
+.env
+.env.local
+.env.*.local
+*.local
+
+# Node/Yarn NPM Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# Infra & Misc
+# =========================
+infra/data/
+infra/logs/
+*.pem
+*.sqlite
+*.db
