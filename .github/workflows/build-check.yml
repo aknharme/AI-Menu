@@ -1,0 +1,63 @@
+name: 🚀 Build Check & Validation
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  build-backend:
+    name: Build Backend (.NET)
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x # Mevcut .NET proje sürümünüze göre güncelleyin.
+        
+    - name: Ensure API directory exists
+      id: check-api
+      run: |
+        if [ -d "api" ] && [ "$(ls -A api)" ]; then echo "exists=true" >> $GITHUB_ENV; fi
+        
+    - name: Restore dependencies
+      if: env.exists == 'true'
+      run: dotnet restore api/
+      
+    - name: Build API
+      if: env.exists == 'true'
+      run: dotnet build api/ --no-restore --configuration Release
+
+  build-frontend:
+    name: Build Frontends
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [customer-web, admin-web, cashier-web]
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Ensure app directory exists
+      id: check-frontend
+      run: |
+        if [ -f "${{ matrix.app }}/package.json" ]; then echo "exists=true" >> $GITHUB_ENV; fi
+
+    - name: Install dependencies
+      if: env.exists == 'true'
+      run: |
+        cd ${{ matrix.app }}
+        npm ci || npm install
+
+    - name: Build App
+      if: env.exists == 'true'
+      run: |
+        cd ${{ matrix.app }}
+        npm run build --if-present
