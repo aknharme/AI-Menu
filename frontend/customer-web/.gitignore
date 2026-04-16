@@ -1,0 +1,9 @@
+# Kurulan paketler repo'ya eklenmez.
+node_modules
+
+# Production build çıktısı CI/CD veya deploy aşamasında yeniden üretilir.
+dist
+
+# Gerçek ortam değişkenleri lokal kalır.
+.env
+.DS_Store
