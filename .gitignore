@@ -1,0 +1,57 @@
+# Operating system
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Editors and IDEs
+.idea/
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.swp
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# .NET
+**/bin/
+**/obj/
+**/TestResults/
+*.rsuser
+
+# Node / React / Vite
+**/node_modules/
+**/dist/
+**/build/
+**/.vite/
+coverage/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.local
+!*.env.example
+
+# Infra / local data
+infra/data/
+infra/logs/
+*.pem
+*.sqlite
+*.db

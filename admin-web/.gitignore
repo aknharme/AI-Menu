@@ -1,0 +1,9 @@
+# Kurulan paketler repo'ya eklenmez.
+node_modules
+
+# Build çıktısı gerektiğinde yeniden üretileceği için izlenmez.
+dist
+
+# Lokal ortam değişkenleri gizli kalır.
+.env
+.DS_Store

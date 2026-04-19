@@ -1,0 +1,64 @@
+name: Build Check
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/**
+      - bugfix/**
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  build-api:
+    name: Build API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore API
+        run: dotnet restore api/AiMenu.Api.csproj
+
+      - name: Build API
+        run: dotnet build api/AiMenu.Api.csproj --configuration Release --no-restore
+
+  build-frontends:
+    name: Build ${{ matrix.app }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - customer-web
+          - admin-web
+          - cashier-web
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ${{ matrix.app }}
+        run: npm ci
+
+      - name: Build app
+        working-directory: ${{ matrix.app }}
+        run: npm run build
