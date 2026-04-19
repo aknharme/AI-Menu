@@ -29,10 +29,11 @@ Repo kokunde su dosya ve klasorler var:
 ```text
 AI-MENU/
 |-- .github/
-|-- admin-web/
 |-- api/
-|-- cashier-web/
-|-- customer-web/
+|-- frontend/
+|   |-- admin-web/
+|   |-- cashier-web/
+|   `-- customer-web/
 |-- docs/
 |-- infra/
 |-- .gitignore
@@ -52,16 +53,16 @@ Bu yapi bize sunu soyluyor:
 
 Projenin ana akis mantigi su:
 
-1. `customer-web`
+1. `frontend/customer-web`
 QR okutan kullanici burada menuye ulasir.
 
 2. `api`
 Menu ve siparis isteklerini burada karsilar.
 
-3. `cashier-web`
+3. `frontend/cashier-web`
 Olusan siparislerin operasyonel takibi icin kullanilir.
 
-4. `admin-web`
+4. `frontend/admin-web`
 Restoran yonetimi, menu ve masa yonetimi icin dusunulmustur.
 
 5. `database.sql` ve EF Core modeli
@@ -121,9 +122,9 @@ Amaci:
 
 Matrix ile uc uygulamayi tek tek build eder:
 
-- `customer-web`
-- `admin-web`
-- `cashier-web`
+- `frontend/customer-web`
+- `frontend/admin-web`
+- `frontend/cashier-web`
 
 Ne yapar:
 
@@ -372,7 +373,7 @@ Eksik olanlar:
 - test projesi
 - daha ileri validation ve logging
 
-## `customer-web`
+## `frontend/customer-web`
 
 Bu klasor musteri tarafini temsil eder.
 Mantik olarak QR kod okutunca acilmasi beklenen uygulama budur.
@@ -380,7 +381,7 @@ Mantik olarak QR kod okutunca acilmasi beklenen uygulama budur.
 Klasor agaci:
 
 ```text
-customer-web/
+frontend/customer-web/
 |-- src/
 |   |-- components/
 |   |-- hooks/
@@ -461,7 +462,7 @@ UI tarafinda:
 
 - fiyat formatlama yardimci fonksiyonu
 
-### `customer-web` Su An Ne Seviyede
+### `frontend/customer-web` Su An Ne Seviyede
 
 Hazir olanlar:
 
@@ -491,11 +492,11 @@ Ayrica backend `MenuResponseDto` donuyor, frontend ise farkli bir liste yapisi b
 
 Yani bu klasor calisabilir iskelet seviyesinde ama API entegrasyonu tamam degil.
 
-## `admin-web`
+## `frontend/admin-web`
 
 Bu klasor restoran yonetim panelinin baslangic surumudur.
 
-Klasor yapi mantigi `customer-web` ile benzer:
+Klasor yapi mantigi `frontend/customer-web` ile benzer:
 
 - `components`
 - `pages`
@@ -540,7 +541,7 @@ Icerik:
 
 - admin tarafinda API cagri merkezi olmasi icin eklendi
 
-### `admin-web` Su An Ne Seviyede
+### `frontend/admin-web` Su An Ne Seviyede
 
 Hazir olanlar:
 
@@ -560,7 +561,7 @@ Eksik olanlar:
 
 Bu klasor su an "yonetim paneli iskeleti" seviyesinde.
 
-## `cashier-web`
+## `frontend/cashier-web`
 
 Bu klasor kasiyer veya siparis operasyon panelidir.
 
@@ -613,7 +614,7 @@ Status mapping de burada:
 - cashier ekraninda kullanilan `Order` tipi
 - `OrderStatus` union type'i
 
-### `cashier-web` Su An Ne Seviyede
+### `frontend/cashier-web` Su An Ne Seviyede
 
 Hazir olanlar:
 
@@ -672,11 +673,6 @@ Ne anlatir:
 - nasil calistirilir
 - `.env` icinde API adresi nasil verilir
 
-Onemli not:
-
-Bu dosya hala eski klasor yolunu `frontend/customer-web` gibi yaziyor.
-Repo yapisi degistigi icin bunun ileride guncellenmesi iyi olur.
-
 ### `repository-tree.md`
 
 - repo agacinin dokumani
@@ -708,10 +704,10 @@ Bu dosya lokal gelistirme icin dusunuldu.
 
 Servisler:
 
-- `api`
-- `customer-web`
-- `admin-web`
-- `cashier-web`
+- `api` -> `/workspace/api`
+- `customer-web` -> `/workspace/frontend/customer-web`
+- `admin-web` -> `/workspace/frontend/admin-web`
+- `cashier-web` -> `/workspace/frontend/cashier-web`
 
 Ne yapiyor:
 
@@ -838,7 +834,7 @@ Bu kisim repo hakimiyeti icin kritik.
 ### Musteri akisi
 
 1. kullanici QR okutur
-2. `customer-web` acilir
+2. `frontend/customer-web` acilir
 3. URL'den `restaurantId` ve `tableId` okunur
 4. menu istegi `api`'ye gider
 5. backend restoran bazli menu verisi doner
@@ -848,12 +844,12 @@ Bu kisim repo hakimiyeti icin kritik.
 ### Operasyon akisi
 
 1. siparis backend'de olusur
-2. bu siparisler ileride `cashier-web` tarafinda gosterilecektir
+2. bu siparisler ileride `frontend/cashier-web` tarafinda gosterilecektir
 3. kasiyer siparis statuslerini yonetecektir
 
 ### Yonetim akisi
 
-1. restoran yoneticisi `admin-web` tarafina girer
+1. restoran yoneticisi `frontend/admin-web` tarafina girer
 2. urun, kategori, masa ve dashboard verilerini yonetir
 3. bunun icin ilerde backend'de admin endpoint'leri yazilacaktir
 
@@ -883,9 +879,9 @@ Projeye yeni giren biri icin onerilen sira:
 6. `api/Data/AppDbContext.cs`
 7. `api/Entities/*`
 8. `api/Services/*`
-9. `customer-web/src/*`
-10. `admin-web/src/*`
-11. `cashier-web/src/*`
+9. `frontend/customer-web/src/**`
+10. `frontend/admin-web/src/**`
+11. `frontend/cashier-web/src/**`
 12. `infra/docker-compose.dev.yml`
 
 Bu sirayla okursa tum repo mantigini hizli toplar.
@@ -918,9 +914,9 @@ Hazir olmayanlar:
 Bu repo ilk hafta sonunda su hale geldi:
 
 - `api` klasoru sistemin cekirdek mantigini tasiyor
-- `customer-web` kullanicinin QR menu deneyiminin ilk versiyonunu olusturuyor
-- `admin-web` yonetim panelinin iskeletini veriyor
-- `cashier-web` operasyon panelinin iskeletini veriyor
+- `frontend/customer-web` kullanicinin QR menu deneyiminin ilk versiyonunu olusturuyor
+- `frontend/admin-web` yonetim panelinin iskeletini veriyor
+- `frontend/cashier-web` operasyon panelinin iskeletini veriyor
 - `docs` ekip surec bilgisini topluyor
 - `infra` lokal ve deploy oncesi altyapi orneklerini tutuyor
 - `.github` kalite kapisi olarak build kontrolu sagliyor

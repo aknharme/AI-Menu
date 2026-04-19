@@ -5,20 +5,6 @@ AI-MENU/
 |-- .github/
 |   `-- workflows/
 |       `-- build-check.yml
-|-- admin-web/
-|   |-- src/
-|   |   |-- components/
-|   |   |-- hooks/
-|   |   |-- layouts/
-|   |   |-- pages/
-|   |   |-- router/
-|   |   |-- services/
-|   |   |-- types/
-|   |   `-- utils/
-|   |-- .env.example
-|   |-- index.html
-|   |-- package.json
-|   `-- vite.config.ts
 |-- api/
 |   |-- Controllers/
 |   |-- Data/
@@ -33,38 +19,53 @@ AI-MENU/
 |   |-- AiMenu.Api.http
 |   |-- appsettings.json
 |   `-- Program.cs
-|-- cashier-web/
-|   |-- src/
-|   |   |-- components/
-|   |   |-- hooks/
-|   |   |-- layouts/
-|   |   |-- pages/
-|   |   |-- router/
-|   |   |-- services/
-|   |   |-- types/
-|   |   `-- utils/
-|   |-- .env.example
-|   |-- index.html
-|   |-- package.json
-|   `-- vite.config.ts
-|-- customer-web/
-|   |-- src/
-|   |   |-- components/
-|   |   |-- hooks/
-|   |   |-- layouts/
-|   |   |-- pages/
-|   |   |-- router/
-|   |   |-- services/
-|   |   |-- types/
-|   |   `-- utils/
-|   |-- .env.example
-|   |-- index.html
-|   |-- package.json
-|   `-- vite.config.ts
 |-- docs/
 |   |-- branching-strategy.md
 |   |-- frontend-ports.md
 |   `-- repository-tree.md
+|-- frontend/
+|   |-- admin-web/
+|   |   |-- src/
+|   |   |   |-- components/
+|   |   |   |-- hooks/
+|   |   |   |-- layouts/
+|   |   |   |-- pages/
+|   |   |   |-- router/
+|   |   |   |-- services/
+|   |   |   |-- types/
+|   |   |   `-- utils/
+|   |   |-- .env.example
+|   |   |-- index.html
+|   |   |-- package.json
+|   |   `-- vite.config.ts
+|   |-- cashier-web/
+|   |   |-- src/
+|   |   |   |-- components/
+|   |   |   |-- hooks/
+|   |   |   |-- layouts/
+|   |   |   |-- pages/
+|   |   |   |-- router/
+|   |   |   |-- services/
+|   |   |   |-- types/
+|   |   |   `-- utils/
+|   |   |-- .env.example
+|   |   |-- index.html
+|   |   |-- package.json
+|   |   `-- vite.config.ts
+|   `-- customer-web/
+|       |-- src/
+|       |   |-- components/
+|       |   |-- hooks/
+|       |   |-- layouts/
+|       |   |-- pages/
+|       |   |-- router/
+|       |   |-- services/
+|       |   |-- types/
+|       |   `-- utils/
+|       |-- .env.example
+|       |-- index.html
+|       |-- package.json
+|       `-- vite.config.ts
 |-- infra/
 |   |-- nginx/
 |   |   `-- default.conf
