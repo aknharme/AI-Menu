@@ -1,61 +1,252 @@
-# AI-Powered QR Menu & Ordering System
+# AI Menu
 
-Yapay zeka destekli, multi-restaurant (çoklu işletme) mimarisine sahip QR kodlu menü ve sipariş yönetim platformu. Müşteriler masalardaki QR kodu okutarak sipariş verebilir, arka planda doğal dil işleme destekli bir yapay zeka ürünleri etiketleyerek yönlendirme yapar.
+Multi-restaurant QR menu ve siparis sistemi icin hazirlanmis mono-repo proje yapisi.
+Bu repo ekipteki backend, customer, admin ve cashier gelistirmelerini ayni yerde yonetmek icin tasarlanmistir.
 
-## 🚀 Teknolojiler
-- **Backend:** ASP.NET Core Web API
-- **Frontend:** React, Vite, Tailwind CSS (Müşteri, Admin ve Kasiyer panelleri olarak ayrılmış)
-- **Database:** PostgreSQL
-- **AI Tarafı:** Ollama (Llama / Qwen) ile etiket üretimi
-- **Altyapı & Yayına Alma:** Docker, Docker Compose, Nginx
+## Proje Ozeti
 
-## 📂 Klasör Yapısı (Mono-repo)
+- `api`: ASP.NET Core Web API
+- `customer-web`: QR ile acilan musteri arayuzu
+- `admin-web`: restoran yonetim paneli
+- `cashier-web`: siparis operasyon ekranlari
+- `infra`: docker ve nginx konfigrasyonlari
+- `docs`: repo yapisi, branch akisi ve notlar
+
+## Kullanilan Teknolojiler
+
+- Backend: ASP.NET Core 8, Entity Framework Core, PostgreSQL
+- Frontend: React, Vite, TypeScript, Tailwind CSS, React Router
+- API Client: Axios
+- CI: GitHub Actions
+- Infra: Docker Compose, Nginx
+
+## Klasor Agaci
+
 ```text
-📦 aimenü
-├── 📂 api               # ASP.NET Core Web API (Backend servisi, veritabanı iletişimi, AI entegrasyonu)
-├── 📂 admin-web         # React + Vite (Restoran yönetimi, menü/ürün/kategori tanımlama)
-├── 📂 cashier-web       # React + Vite (Kasiyer ve mutfak için canlı sipariş takip & durum güncelleme)
-├── 📂 customer-web      # React + Vite (Müşterilerin QR ile göreceği mobil-öncelikli sipariş arayüzü)
-├── 📂 docs              # API dokümanları, mimari çizimler ve iş kuralları notları
-├── 📂 infra             # Docker compose dosyaları, Nginx konfigürasyonları, veritabanı scriptleri
-├── 📂 .github
-│   └── 📂 workflows     # GitHub Actions CI/CD pipeline'ları (Otomatik derleme & test)
-├── 📜 .gitignore        # .NET, Node.js ve işletim sistemine özel ignore tanımları
-└── 📜 README.md         # Proje ana dokümantasyonu
+AI-MENU/
+|-- .github/
+|   `-- workflows/
+|       `-- build-check.yml
+|-- admin-web/
+|   |-- src/
+|   |   |-- components/
+|   |   |   `-- StatCard.tsx
+|   |   |-- hooks/
+|   |   |-- layouts/
+|   |   |   `-- AdminLayout.tsx
+|   |   |-- pages/
+|   |   |   `-- DashboardPage.tsx
+|   |   |-- router/
+|   |   |   `-- index.tsx
+|   |   |-- services/
+|   |   |   `-- api.ts
+|   |   |-- types/
+|   |   |-- utils/
+|   |   |-- index.css
+|   |   `-- main.tsx
+|   |-- .env.example
+|   |-- index.html
+|   `-- package.json
+|-- api/
+|   |-- Controllers/
+|   |   |-- MenuController.cs
+|   |   `-- OrdersController.cs
+|   |-- Data/
+|   |   |-- AppDbContext.cs
+|   |   `-- AppDbSeeder.cs
+|   |-- DTOs/
+|   |   |-- CreateOrderItemRequestDto.cs
+|   |   |-- CreateOrderRequestDto.cs
+|   |   |-- MenuCategoryDto.cs
+|   |   |-- MenuProductDto.cs
+|   |   |-- MenuResponseDto.cs
+|   |   |-- OrderItemResponseDto.cs
+|   |   `-- OrderResponseDto.cs
+|   |-- Entities/
+|   |   |-- Category.cs
+|   |   |-- Order.cs
+|   |   |-- OrderItem.cs
+|   |   |-- Product.cs
+|   |   |-- Restaurant.cs
+|   |   `-- Table.cs
+|   |-- Properties/
+|   |   `-- launchSettings.json
+|   |-- Repositories/
+|   |   |-- Interfaces/
+|   |   |   |-- IOrderRepository.cs
+|   |   |   `-- IRestaurantRepository.cs
+|   |   |-- OrderRepository.cs
+|   |   `-- RestaurantRepository.cs
+|   |-- Services/
+|   |   |-- Interfaces/
+|   |   |   |-- IMenuService.cs
+|   |   |   `-- IOrderService.cs
+|   |   |-- MenuService.cs
+|   |   `-- OrderService.cs
+|   |-- AiMenu.Api.csproj
+|   |-- AiMenu.Api.http
+|   |-- appsettings.json
+|   |-- Program.cs
+|   `-- README.md
+|-- cashier-web/
+|   |-- src/
+|   |   |-- components/
+|   |   |   `-- OrderCard.tsx
+|   |   |-- hooks/
+|   |   |-- layouts/
+|   |   |   `-- CashierLayout.tsx
+|   |   |-- pages/
+|   |   |   `-- OrdersPage.tsx
+|   |   |-- router/
+|   |   |   `-- index.tsx
+|   |   |-- services/
+|   |   |   `-- api.ts
+|   |   |-- types/
+|   |   |   `-- order.ts
+|   |   |-- utils/
+|   |   |-- index.css
+|   |   `-- main.tsx
+|   |-- .env.example
+|   |-- index.html
+|   `-- package.json
+|-- customer-web/
+|   |-- src/
+|   |   |-- components/
+|   |   |   `-- MenuList.tsx
+|   |   |-- hooks/
+|   |   |   `-- useQueryParams.ts
+|   |   |-- layouts/
+|   |   |   `-- CustomerLayout.tsx
+|   |   |-- pages/
+|   |   |   `-- MenuPage.tsx
+|   |   |-- router/
+|   |   |   `-- index.tsx
+|   |   |-- services/
+|   |   |   |-- api.ts
+|   |   |   `-- menuService.ts
+|   |   |-- types/
+|   |   |   `-- menu.ts
+|   |   |-- utils/
+|   |   |   `-- formatPrice.ts
+|   |   |-- index.css
+|   |   `-- main.tsx
+|   |-- .env.example
+|   |-- index.html
+|   `-- package.json
+|-- docs/
+|   |-- branching-strategy.md
+|   |-- frontend-ports.md
+|   `-- repository-tree.md
+|-- infra/
+|   |-- nginx/
+|   |   `-- default.conf
+|   |-- docker-compose.dev.yml
+|   `-- README.md
+|-- .gitignore
+|-- AI-Menu.sln
+`-- database.sql
 ```
 
-## 🌿 Branch Kullanımı ve Git Kuralları
+Detayli aaciklama icin [docs/repository-tree.md](/C:/Users/Kadir/Desktop/AI-MENU/docs/repository-tree.md) dosyasina bakilabilir.
 
-Bu repo projeyi hızlı ve güvenli geliştirmek adına **Trunk-Based Development** uyarlaması ile çalışır.
+## Branch Yapisi
 
-### Branch İsimlendirme Kuralları:
-- `main` : Tamamen stabil, **Production** ortamına çıkan branch. (Direkt commit atılamaz, sadece PR ile merge edilir)
-- `develop` : Aktif geliştirmenin yapıldığı branch. (Tüm güncel özellikler burada toplanır)
-- `feature/[özellik-adı]` : Yeni geliştirilecek bir özellik veya sayfa için açılır. *Örn: `feature/cart-module`, `feature/payment-integration`*
-- `bugfix/[hata-adı]` : Geliştirme, test sürecinde bulunan bug'lar için açılır. *Örn: `bugfix/cart-calc-error`*
-- `hotfix/[hata-adı]` : Production'da (`main`) ortaya çıkan ve acil çözülmesi gereken hatalar için açılır. *Örn: `hotfix/login-crash`*
+- `main`: production branch
+- `develop`: aktif gelistirme branch'i
+- `feature/*`: yeni ozellik gelistirmeleri
+- `bugfix/*`: hata duzeltmeleri
 
-### Git Akışı (Workflow) ve Pull Request (PR) Süreci:
-1. Geliştirici, `develop` branch'inden güncel kodları çeker ve yeni branch'ini oluşturur:
-   ```bash
-   git checkout develop
-   git pull origin develop
-   git checkout -b feature/yeni-ozellik
-   ```
-2. Geliştirici kendi lokalinde değişiklikleri yapar ve branch'ine gönderir (`git push -u origin feature/yeni-ozellik`).
-3. Çalışma bittiğinde GitHub üzerinden `develop` branch'ini hedefleyen bir **Pull Request (PR)** açılır.
-4. Açılan PR sistemdeki GitHub Actions sürecini tetikler (Tüm kodların hatasız derlendiği kontrol edilir).
-5. (Opsiyonel) Ekipteki başka bir kişi PR'ı inceler (**Code Review**).
-6. İnceleme onaylanınca kod **"Squash and Merge"** veya **"Rebase"** seçeneği ile temiz bir geçmiş bırakılarak `develop`'a birleştirilir.
-7. Deployment zamanı geldiğinde `develop`, `main`'e merge edilerek production ortamına sürülür.
+Detayli kurallar [docs/branching-strategy.md](/C:/Users/Kadir/Desktop/AI-MENU/docs/branching-strategy.md) icinde yer alir.
 
-## 🛠️ Nasıl Çalıştırılır (Geliştirme Ortamı)
+## Feature Branch Nasil Acilir
 
-Projenin birbiri ile konuşan farklı parçaları vardır. Gelecekte tüm repo'yu tek bir tuşla Docker üzerinden kaldıracağız:
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b feature/menu-filter
+```
+
+Bugfix icin:
+
+```bash
+git checkout develop
+git pull origin develop
+git checkout -b bugfix/order-total
+```
+
+## Merge ve PR Kurallari
+
+- Dogrudan `main` veya `develop` branch'ine commit atilmaz.
+- Her is ayrica bir `feature/*` veya `bugfix/*` branch'inde yapilir.
+- Her branch GitHub'a push edilir ve `develop` hedefli PR acilir.
+- Build check gecmeden merge yapilmaz.
+- Production'a cikacak toplu degisiklikler `develop -> main` PR'i ile ilerler.
+
+## Calistirma
+
+### Backend
+
+```bash
+cd api
+dotnet restore
+dotnet run
+```
+
+Varsayilan olarak Swagger acilir. `ConnectionStrings__DefaultConnection` verilmezse InMemory database ile ayaga kalkar.
+
+### Customer Web
+
+```bash
+cd customer-web
+npm install
+npm run dev
+```
+
+### Admin Web
+
+```bash
+cd admin-web
+npm install
+npm run dev
+```
+
+### Cashier Web
+
+```bash
+cd cashier-web
+npm install
+npm run dev
+```
+
+### Docker ile Lokal Baslangic
+
 ```bash
 cd infra
-docker-compose -f docker-compose.dev.yml up -d
+docker compose -f docker-compose.dev.yml up --build
 ```
-Ancak geliştirme esnasında ilgili klasörlere girip kendi toolları ile başlatabilirsiniz:
-- Backend: `cd api` -> `dotnet run`
-- Web Müşteri: `cd customer-web` -> `npm install` && `npm run dev`
+
+## Vite Kurulum Komutlari
+
+Asagidaki komutlar bu repo icindeki frontend uygulamalarinin ilk kurulum mantigini temsil eder:
+
+```bash
+npm create vite@latest customer-web -- --template react-ts
+npm create vite@latest admin-web -- --template react-ts
+npm create vite@latest cashier-web -- --template react-ts
+```
+
+Tailwind kurulumu:
+
+```bash
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+```
+
+## Klasor Aciklamalari
+
+- `api`: menu ve siparis endpoint'leri ile EF Core veri katmani
+- `customer-web`: QR menu deneyimi
+- `admin-web`: dashboard ve yonetim ekranlari
+- `cashier-web`: siparis operasyon arayuzu
+- `infra`: lokal docker ve reverse proxy ayarlari
+- `docs`: ekip icin repo ve surec dokumani

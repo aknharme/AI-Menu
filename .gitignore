@@ -1,70 +1,55 @@
-# =========================
-# Operating System Files
-# =========================
+# Operating system
 .DS_Store
 .DS_Store?
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
 Thumbs.db
+ehthumbs.db
 Desktop.ini
 
-# =========================
-# IDE & Workspaces
-# =========================
+# Editors and IDEs
+.idea/
+.vs/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
-.idea/
 *.suo
 *.user
 *.userosscache
 *.sln.docstates
 *.swp
 
-# =========================
-# Backend (.NET Core)
-# =========================
-api/**/bin/
-api/**/obj/
-api/**/TestResults/
-api/**/appsettings.Development.json
-api/**/appsettings.Local.json
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
-# =========================
-# Frontend (React + Vite + Node)
-# =========================
-# Ignore node_modules across all frontend properties
-customer-web/node_modules/
-admin-web/node_modules/
-cashier-web/node_modules/
-node_modules/
+# .NET
+**/bin/
+**/obj/
+**/TestResults/
+*.rsuser
 
-# Ignore build artifacts
-customer-web/dist/
-admin-web/dist/
-cashier-web/dist/
-dist/
-build/
+# Node / React / Vite
+**/node_modules/
+**/dist/
+**/build/
+**/.vite/
+coverage/
 
-# Ignore env files (keep template env definitions if any, e.g. .env.example)
+# Environment files
 .env
 .env.local
 .env.*.local
 *.local
+!*.env.example
 
-# Node/Yarn NPM Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# =========================
-# Infra & Misc
-# =========================
+# Infra / local data
 infra/data/
 infra/logs/
 *.pem
