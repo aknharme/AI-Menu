@@ -70,8 +70,10 @@ Dosyalar:
 - `CreateOrderRequestDto`: Yeni siparis acmak icin gelen ana request modeli
 - `CreateOrderItemRequestDto`: Siparis satiri request modeli
 - `MenuResponseDto`: Menu endpoint'inin dondugu ana cevap
-- `MenuCategoryDto`: Bir kategoriyi ve icindeki urunleri tasir
-- `MenuProductDto`: Menu icinde gosterilecek urun verisi
+- `CategoryDto`: Bir kategoriyi ve icindeki aktif urunleri tasir
+- `ProductListDto`: Menu listesinde gosterilecek aktif urun verisi
+- `ProductDetailDto`: Urun detayinda aciklama, icerik, alerjen, etiket ve varyant bilgisini tasir
+- `ProductVariantDto`: Urun varyant bilgisini tasir
 - `OrderResponseDto`: Siparis olustuktan sonra donulen ana cevap
 - `OrderItemResponseDto`: Siparis satiri response modeli
 
@@ -123,7 +125,7 @@ HTTP isteklerinin girdigi katmandir. Controller'lar ince tutulmustur; is kuralin
 
 Dosyalar:
 
-- `MenuController.cs`: `GET /api/menu/{restaurantId}` endpoint'ini saglar
+- `MenuController.cs`: Musteri menu, kategori, urun listesi ve urun detayi endpoint'lerini saglar
 - `OrdersController.cs`: `POST /api/orders` endpoint'ini saglar
 
 Controller'larin gorevi:
@@ -212,6 +214,19 @@ Bu endpoint su an:
 - Sadece aktif kategorileri alir
 - Sadece aktif urunleri alir
 - Sonucu API icin uygun DTO'ya cevirir
+
+### `GET /api/menu/{restaurantId}/categories`
+
+Verilen restoranin aktif kategorilerini ve kategori altindaki aktif urunleri doner.
+
+### `GET /api/menu/{restaurantId}/products`
+
+Verilen restoranin aktif urunlerini kategori bilgisiyle birlikte doner.
+
+### `GET /api/menu/{restaurantId}/products/{productId}`
+
+Verilen restorana ait aktif urun detayini doner.
+Aciklama, icerik, alerjen, etiket ve aktif varyant bilgilerini icerir.
 
 ### `POST /api/orders`
 

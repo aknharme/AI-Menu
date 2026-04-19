@@ -6,9 +6,9 @@ Bu repo ekipteki backend, customer, admin ve cashier gelistirmelerini ayni yerde
 ## Proje Ozeti
 
 - `api`: ASP.NET Core Web API
-- `customer-web`: QR ile acilan musteri arayuzu
-- `admin-web`: restoran yonetim paneli
-- `cashier-web`: siparis operasyon ekranlari
+- `frontend/customer-web`: QR ile acilan musteri arayuzu
+- `frontend/admin-web`: restoran yonetim paneli
+- `frontend/cashier-web`: siparis operasyon ekranlari
 - `infra`: docker ve nginx konfigrasyonlari
 - `docs`: repo yapisi, branch akisi ve notlar
 
@@ -27,26 +27,6 @@ AI-MENU/
 |-- .github/
 |   `-- workflows/
 |       `-- build-check.yml
-|-- admin-web/
-|   |-- src/
-|   |   |-- components/
-|   |   |   `-- StatCard.tsx
-|   |   |-- hooks/
-|   |   |-- layouts/
-|   |   |   `-- AdminLayout.tsx
-|   |   |-- pages/
-|   |   |   `-- DashboardPage.tsx
-|   |   |-- router/
-|   |   |   `-- index.tsx
-|   |   |-- services/
-|   |   |   `-- api.ts
-|   |   |-- types/
-|   |   |-- utils/
-|   |   |-- index.css
-|   |   `-- main.tsx
-|   |-- .env.example
-|   |-- index.html
-|   `-- package.json
 |-- api/
 |   |-- Controllers/
 |   |   |-- MenuController.cs
@@ -88,55 +68,26 @@ AI-MENU/
 |   |-- appsettings.json
 |   |-- Program.cs
 |   `-- README.md
-|-- cashier-web/
-|   |-- src/
-|   |   |-- components/
-|   |   |   `-- OrderCard.tsx
-|   |   |-- hooks/
-|   |   |-- layouts/
-|   |   |   `-- CashierLayout.tsx
-|   |   |-- pages/
-|   |   |   `-- OrdersPage.tsx
-|   |   |-- router/
-|   |   |   `-- index.tsx
-|   |   |-- services/
-|   |   |   `-- api.ts
-|   |   |-- types/
-|   |   |   `-- order.ts
-|   |   |-- utils/
-|   |   |-- index.css
-|   |   `-- main.tsx
-|   |-- .env.example
-|   |-- index.html
-|   `-- package.json
-|-- customer-web/
-|   |-- src/
-|   |   |-- components/
-|   |   |   `-- MenuList.tsx
-|   |   |-- hooks/
-|   |   |   `-- useQueryParams.ts
-|   |   |-- layouts/
-|   |   |   `-- CustomerLayout.tsx
-|   |   |-- pages/
-|   |   |   `-- MenuPage.tsx
-|   |   |-- router/
-|   |   |   `-- index.tsx
-|   |   |-- services/
-|   |   |   |-- api.ts
-|   |   |   `-- menuService.ts
-|   |   |-- types/
-|   |   |   `-- menu.ts
-|   |   |-- utils/
-|   |   |   `-- formatPrice.ts
-|   |   |-- index.css
-|   |   `-- main.tsx
-|   |-- .env.example
-|   |-- index.html
-|   `-- package.json
 |-- docs/
 |   |-- branching-strategy.md
 |   |-- frontend-ports.md
 |   `-- repository-tree.md
+|-- frontend/
+|   |-- admin-web/
+|   |   |-- src/
+|   |   |-- .env.example
+|   |   |-- index.html
+|   |   `-- package.json
+|   |-- cashier-web/
+|   |   |-- src/
+|   |   |-- .env.example
+|   |   |-- index.html
+|   |   `-- package.json
+|   `-- customer-web/
+|       |-- src/
+|       |-- .env.example
+|       |-- index.html
+|       `-- package.json
 |-- infra/
 |   |-- nginx/
 |   |   `-- default.conf
@@ -147,7 +98,7 @@ AI-MENU/
 `-- database.sql
 ```
 
-Detayli aaciklama icin [docs/repository-tree.md](/C:/Users/Kadir/Desktop/AI-MENU/docs/repository-tree.md) dosyasina bakilabilir.
+Detayli aciklama icin [docs/repository-tree.md](docs/repository-tree.md) dosyasina bakilabilir.
 
 ## Branch Yapisi
 
@@ -156,7 +107,7 @@ Detayli aaciklama icin [docs/repository-tree.md](/C:/Users/Kadir/Desktop/AI-MENU
 - `feature/*`: yeni ozellik gelistirmeleri
 - `bugfix/*`: hata duzeltmeleri
 
-Detayli kurallar [docs/branching-strategy.md](/C:/Users/Kadir/Desktop/AI-MENU/docs/branching-strategy.md) icinde yer alir.
+Detayli kurallar [docs/branching-strategy.md](docs/branching-strategy.md) icinde yer alir.
 
 ## Feature Branch Nasil Acilir
 
@@ -197,7 +148,7 @@ Varsayilan olarak Swagger acilir. `ConnectionStrings__DefaultConnection` verilme
 ### Customer Web
 
 ```bash
-cd customer-web
+cd frontend/customer-web
 npm install
 npm run dev
 ```
@@ -205,7 +156,7 @@ npm run dev
 ### Admin Web
 
 ```bash
-cd admin-web
+cd frontend/admin-web
 npm install
 npm run dev
 ```
@@ -213,7 +164,7 @@ npm run dev
 ### Cashier Web
 
 ```bash
-cd cashier-web
+cd frontend/cashier-web
 npm install
 npm run dev
 ```
@@ -230,9 +181,9 @@ docker compose -f docker-compose.dev.yml up --build
 Asagidaki komutlar bu repo icindeki frontend uygulamalarinin ilk kurulum mantigini temsil eder:
 
 ```bash
-npm create vite@latest customer-web -- --template react-ts
-npm create vite@latest admin-web -- --template react-ts
-npm create vite@latest cashier-web -- --template react-ts
+npm create vite@latest frontend/customer-web -- --template react-ts
+npm create vite@latest frontend/admin-web -- --template react-ts
+npm create vite@latest frontend/cashier-web -- --template react-ts
 ```
 
 Tailwind kurulumu:
@@ -245,8 +196,8 @@ npx tailwindcss init -p
 ## Klasor Aciklamalari
 
 - `api`: menu ve siparis endpoint'leri ile EF Core veri katmani
-- `customer-web`: QR menu deneyimi
-- `admin-web`: dashboard ve yonetim ekranlari
-- `cashier-web`: siparis operasyon arayuzu
+- `frontend/customer-web`: QR menu deneyimi
+- `frontend/admin-web`: dashboard ve yonetim ekranlari
+- `frontend/cashier-web`: siparis operasyon arayuzu
 - `infra`: lokal docker ve reverse proxy ayarlari
 - `docs`: ekip icin repo ve surec dokumani

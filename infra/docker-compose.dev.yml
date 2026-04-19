@@ -1,6 +1,23 @@
 version: "3.9"
 
 services:
+  # Lokal geliştirmede gerçek PostgreSQL bağlantısını test etmek için kullanılır.
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ai_menu
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d ai_menu"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   api:
     image: mcr.microsoft.com/dotnet/sdk:9.0
     working_dir: /workspace/api
@@ -11,11 +28,19 @@ services:
       - "5000:5000"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      # API container içinden PostgreSQL servisine Docker network adıyla bağlanır.
+      ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=ai_menu;Username=postgres;Password=postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   customer-web:
     image: node:20-alpine
-    working_dir: /workspace/customer-web
+    working_dir: /workspace/frontend/customer-web
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
+    environment:
+      # Browser localhost üzerinden host makinedeki yayınlanmış API portuna gider.
+      VITE_API_BASE_URL: http://localhost:5000/api
     volumes:
       - ../:/workspace
     ports:
@@ -25,8 +50,11 @@ services:
 
   admin-web:
     image: node:20-alpine
-    working_dir: /workspace/admin-web
+    working_dir: /workspace/frontend/admin-web
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5174"
+    environment:
+      # Admin arayüzü ileride backend endpointlerini aynı base URL üzerinden çağıracak.
+      VITE_API_BASE_URL: http://localhost:5000/api
     volumes:
       - ../:/workspace
     ports:
@@ -36,11 +64,18 @@ services:
 
   cashier-web:
     image: node:20-alpine
-    working_dir: /workspace/cashier-web
+    working_dir: /workspace/frontend/cashier-web
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5175"
+    environment:
+      # Cashier arayüzü ileride sipariş endpointlerini aynı base URL üzerinden çağıracak.
+      VITE_API_BASE_URL: http://localhost:5000/api
     volumes:
       - ../:/workspace
     ports:
       - "5175:5175"
     depends_on:
       - api
+
+volumes:
+  # PostgreSQL verisini container yeniden başlasa da korur.
+  postgres-data:

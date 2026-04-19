@@ -1,6 +1,23 @@
 @AiMenu.Api_HostAddress = http://localhost:5268
+@RestaurantId = 11111111-1111-1111-1111-111111111111
+@BurgerProductId = 33333333-3333-3333-3333-333333333332
 
-GET {{AiMenu.Api_HostAddress}}/weatherforecast/
+GET {{AiMenu.Api_HostAddress}}/api/menu/{{RestaurantId}}
+Accept: application/json
+
+###
+
+GET {{AiMenu.Api_HostAddress}}/api/menu/{{RestaurantId}}/categories
+Accept: application/json
+
+###
+
+GET {{AiMenu.Api_HostAddress}}/api/menu/{{RestaurantId}}/products
+Accept: application/json
+
+###
+
+GET {{AiMenu.Api_HostAddress}}/api/menu/{{RestaurantId}}/products/{{BurgerProductId}}
 Accept: application/json
 
 ###

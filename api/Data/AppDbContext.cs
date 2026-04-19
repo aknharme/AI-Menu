@@ -1,7 +1,5 @@
-using System.Text.Json;
 using AiMenu.Api.Entities;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace AiMenu.Api.Data;
 
@@ -12,6 +10,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Restaurant> Restaurants => Set<Restaurant>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
+    // Ürün detayında gösterilen varyant, alerjen ve tag tabloları.
+    public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
+    public DbSet<ProductAllergen> ProductAllergens => Set<ProductAllergen>();
+    public DbSet<ProductTag> ProductTags => Set<ProductTag>();
     public DbSet<Table> Tables => Set<Table>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
@@ -19,12 +21,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
-
-        // Product.Tags koleksiyonu fiziksel veritabaninda JSON string olarak saklanir.
-        var tagsComparer = new ValueComparer<List<string>>(
-            (left, right) => left!.SequenceEqual(right!),
-            value => value.Aggregate(0, (current, item) => HashCode.Combine(current, item.GetHashCode())),
-            value => value.ToList());
 
         modelBuilder.Entity<Restaurant>(entity =>
         {
@@ -49,13 +45,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(x => x.ProductId);
             entity.Property(x => x.Name).HasMaxLength(150).IsRequired();
             entity.Property(x => x.Description).HasMaxLength(500);
+            entity.Property(x => x.Ingredients).HasMaxLength(500);
             entity.Property(x => x.Price).HasPrecision(10, 2);
-            // AI ve filtreleme tarafinda kullanilacak tag listesi JSON olarak tutulur.
-            entity.Property(x => x.Tags)
-                .HasConversion(
-                    value => JsonSerializer.Serialize(value, (JsonSerializerOptions?)null),
-                    value => JsonSerializer.Deserialize<List<string>>(value, (JsonSerializerOptions?)null) ?? new List<string>())
-                .Metadata.SetValueComparer(tagsComparer);
 
             entity.HasOne(x => x.Restaurant)
                 .WithMany(x => x.Products)
@@ -66,6 +57,58 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(x => x.Products)
                 .HasForeignKey(x => x.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<ProductVariant>(entity =>
+        {
+            // Varyantlar ürün bazlıdır ve pasif varyantlar müşteri detayında gösterilmez.
+            entity.HasKey(x => x.ProductVariantId);
+            entity.Property(x => x.Name).HasMaxLength(120).IsRequired();
+            entity.Property(x => x.PriceDelta).HasPrecision(10, 2);
+
+            entity.HasOne(x => x.Restaurant)
+                .WithMany(x => x.ProductVariants)
+                .HasForeignKey(x => x.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Product)
+                .WithMany(x => x.Variants)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProductAllergen>(entity =>
+        {
+            // Alerjen kayıtları ürün detay response'unda sade isim listesine dönüştürülür.
+            entity.HasKey(x => x.ProductAllergenId);
+            entity.Property(x => x.Name).HasMaxLength(120).IsRequired();
+
+            entity.HasOne(x => x.Restaurant)
+                .WithMany(x => x.ProductAllergens)
+                .HasForeignKey(x => x.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Product)
+                .WithMany(x => x.Allergens)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ProductTag>(entity =>
+        {
+            // Tag kayıtları hem AI filtreleme sözlüğü hem de müşteri etiketi olarak kullanılır.
+            entity.HasKey(x => x.ProductTagId);
+            entity.Property(x => x.Name).HasMaxLength(80).IsRequired();
+
+            entity.HasOne(x => x.Restaurant)
+                .WithMany(x => x.ProductTags)
+                .HasForeignKey(x => x.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Product)
+                .WithMany(x => x.Tags)
+                .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Table>(entity =>

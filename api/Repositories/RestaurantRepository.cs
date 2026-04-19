@@ -7,12 +7,57 @@ namespace AiMenu.Api.Repositories;
 
 public class RestaurantRepository(AppDbContext dbContext) : IRestaurantRepository
 {
-    public async Task<Restaurant?> GetMenuAsync(Guid restaurantId, CancellationToken cancellationToken = default)
+    public async Task<Restaurant?> GetRestaurantAsync(Guid restaurantId, CancellationToken cancellationToken = default)
     {
+        // Pasif restoran müşteri menüsünde yok sayılır.
         return await dbContext.Restaurants
             .AsNoTracking()
-            .Include(x => x.Categories.Where(category => category.IsActive))
-                .ThenInclude(category => category.Products.Where(product => product.IsActive))
             .FirstOrDefaultAsync(x => x.RestaurantId == restaurantId && x.IsActive, cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Category>> GetActiveCategoriesWithProductsAsync(
+        Guid restaurantId,
+        CancellationToken cancellationToken = default)
+    {
+        // Include filtresi sayesinde pasif ürünler kategori response'una hiç girmez.
+        return await dbContext.Categories
+            .AsNoTracking()
+            .Where(x => x.RestaurantId == restaurantId && x.IsActive)
+            .Include(x => x.Products.Where(product => product.IsActive))
+                .ThenInclude(product => product.Tags)
+            .OrderBy(x => x.DisplayOrder)
+            .ThenBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<IReadOnlyCollection<Product>> GetActiveProductsAsync(
+        Guid restaurantId,
+        CancellationToken cancellationToken = default)
+    {
+        // Düz ürün listesi de kategori aktifliğini kontrol eder; pasif kategorinin ürünü görünmez.
+        return await dbContext.Products
+            .AsNoTracking()
+            .Where(x => x.RestaurantId == restaurantId && x.IsActive && x.Category.IsActive)
+            .Include(x => x.Category)
+            .Include(x => x.Tags)
+            .OrderBy(x => x.Category.DisplayOrder)
+            .ThenBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Product?> GetActiveProductAsync(
+        Guid restaurantId,
+        Guid productId,
+        CancellationToken cancellationToken = default)
+    {
+        // Detay endpoint'i sadece aynı restorana ait aktif ürünün alt bilgilerini yükler.
+        return await dbContext.Products
+            .AsNoTracking()
+            .Where(x => x.RestaurantId == restaurantId && x.ProductId == productId && x.IsActive && x.Category.IsActive)
+            .Include(x => x.Category)
+            .Include(x => x.Tags)
+            .Include(x => x.Allergens)
+            .Include(x => x.Variants.Where(variant => variant.IsActive))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }
