@@ -1,0 +1,22 @@
+[1mdiff --git a/api/Properties/launchSettings.json b/api/Properties/launchSettings.json[m
+[1mindex 0988a22..69b7470 100644[m
+[1m--- a/api/Properties/launchSettings.json[m
+[1m+++ b/api/Properties/launchSettings.json[m
+[36m@@ -5,7 +5,7 @@[m
+       "commandName": "Project",[m
+       "dotnetRunMessages": true,[m
+       "launchBrowser": false,[m
+[31m-      "applicationUrl": "http://localhost:5268",[m
+[32m+[m[32m      "applicationUrl": "http://localhost:5000",[m
+       "environmentVariables": {[m
+         "ASPNETCORE_ENVIRONMENT": "Development"[m
+       }[m
+[36m@@ -14,7 +14,7 @@[m
+       "commandName": "Project",[m
+       "dotnetRunMessages": true,[m
+       "launchBrowser": false,[m
+[31m-      "applicationUrl": "https://localhost:7197;http://localhost:5268",[m
+[32m+[m[32m      "applicationUrl": "https://localhost:7197;http://localhost:5000",[m
+       "environmentVariables": {[m
+         "ASPNETCORE_ENVIRONMENT": "Development"[m
+       }[m
