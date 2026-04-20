@@ -28,6 +28,7 @@ services:
       - "5000:5000"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://0.0.0.0:5000
       # API container içinden PostgreSQL servisine Docker network adıyla bağlanır.
       ConnectionStrings__DefaultConnection: Host=postgres;Port=5432;Database=ai_menu;Username=postgres;Password=postgres
     depends_on:

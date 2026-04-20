@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { ProductDetail, ProductListItem } from '../types/menu';
 import { formatPrice } from '../utils/formatPrice';
 
@@ -8,6 +9,7 @@ type ProductDetailDrawerProps = {
   isLoading: boolean;
   error: string | null;
   tableId?: string;
+  onAddToCart: (product: ProductListItem, quantity: number) => void;
   onClose: () => void;
 };
 
@@ -18,8 +20,17 @@ export default function ProductDetailDrawer({
   isLoading,
   error,
   tableId,
+  onAddToCart,
   onClose,
 }: ProductDetailDrawerProps) {
+  const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuantity(1);
+    }
+  }, [isOpen, product?.productId]);
+
   if (!isOpen || !product) {
     return null;
   }
@@ -153,13 +164,38 @@ export default function ProductDetailDrawer({
         </div>
 
         <div className="border-t border-stone-200 px-5 py-4">
-          <button
-            type="button"
-            disabled
-            className="w-full rounded-2xl bg-stone-950 px-4 py-3 text-sm font-semibold text-white opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            Sepete ekle alanı yakında
-          </button>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 rounded-2xl border border-stone-200 px-2 py-2">
+              <button
+                type="button"
+                onClick={() => setQuantity((current) => Math.max(1, current - 1))}
+                className="rounded-xl px-3 py-2 text-sm text-stone-700"
+              >
+                -
+              </button>
+              <span className="min-w-8 text-center text-sm font-semibold text-stone-950">
+                {quantity}
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuantity((current) => current + 1)}
+                className="rounded-xl px-3 py-2 text-sm text-stone-700"
+              >
+                +
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                onAddToCart(product, quantity);
+                onClose();
+              }}
+              className="w-full rounded-2xl bg-stone-950 px-4 py-3 text-sm font-semibold text-white"
+            >
+              {formatPrice(product.price * quantity)} ile sepete ekle
+            </button>
+          </div>
         </div>
       </div>
     </div>

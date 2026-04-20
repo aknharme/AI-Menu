@@ -22,7 +22,7 @@ var configuration = new ConfigurationBuilder()
     .AddCommandLine(args)
     .Build();
 
-var urls = configuration["urls"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://localhost:5268";
+var urls = configuration["urls"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://localhost:5000";
 var connectionString = configuration.GetConnectionString("DefaultConnection");
 
 // Bu ortamda WebApplication.CreateBuilder takıldığı için aynı pipeline klasik WebHostBuilder ile kuruluyor.
