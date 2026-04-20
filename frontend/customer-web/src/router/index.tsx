@@ -2,7 +2,6 @@ import { createBrowserRouter } from 'react-router-dom';
 import CustomerLayout from '../layouts/CustomerLayout';
 import MenuPage from '../pages/MenuPage';
 
-// Customer uygulamasında ana rota doğrudan menü sayfasına gider.
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -10,6 +9,14 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
+        element: <MenuPage />,
+      },
+      {
+        path: 'menu/:restaurantId',
+        element: <MenuPage />,
+      },
+      {
+        path: 'menu/:restaurantId/table/:tableId',
         element: <MenuPage />,
       },
     ],

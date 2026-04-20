@@ -1,4 +1,3 @@
-// Menü listesinde kart olarak gösterilecek aktif ürünün backend response tipi.
 export type ProductListItem = {
   productId: string;
   categoryId: string;
@@ -9,7 +8,6 @@ export type ProductListItem = {
   tags: string[];
 };
 
-// Backend menüyü kategori bazlı döndürdüğü için frontend de aynı yapıyı kullanır.
 export type MenuCategory = {
   categoryId: string;
   name: string;
@@ -17,14 +15,33 @@ export type MenuCategory = {
   products: ProductListItem[];
 };
 
-// GET /api/menu/{restaurantId} endpoint'inin müşteri tarafındaki ana response tipi.
 export type MenuResponse = {
   restaurantId: string;
   restaurantName: string;
   categories: MenuCategory[];
 };
 
-// Menü isteğinde restoran ve masa bilgileri opsiyonel query param olarak taşınır.
+export type ProductVariant = {
+  productVariantId: string;
+  name: string;
+  priceDelta: number;
+  finalPrice: number;
+};
+
+export type ProductDetail = {
+  productId: string;
+  restaurantId: string;
+  categoryId: string;
+  categoryName: string;
+  name: string;
+  description: string;
+  ingredients: string;
+  price: number;
+  allergens: string[];
+  tags: string[];
+  variants: ProductVariant[];
+};
+
 export type MenuQueryParams = {
   restaurantId?: string;
   tableId?: string;

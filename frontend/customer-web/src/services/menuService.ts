@@ -1,13 +1,12 @@
 import api from './api';
-import type { MenuQueryParams, MenuResponse } from '../types/menu';
+import type { MenuResponse, ProductDetail } from '../types/menu';
 
-// QR parametresi yokken local test için seed edilen demo restoran kullanılır.
-const demoRestaurantId = '11111111-1111-1111-1111-111111111111';
-
-// Menü verisini backend'deki restaurantId bazlı endpoint'ten çeker.
-export async function getMenu(params: MenuQueryParams = {}) {
-  // Backend restaurantId'yi route üzerinden beklediği için query param yerine URL path kullanıyoruz.
-  const restaurantId = params.restaurantId ?? demoRestaurantId;
+export async function getMenu(restaurantId: string) {
   const response = await api.get<MenuResponse>(`/menu/${restaurantId}`);
+  return response.data;
+}
+
+export async function getProductDetail(restaurantId: string, productId: string) {
+  const response = await api.get<ProductDetail>(`/menu/${restaurantId}/products/${productId}`);
   return response.data;
 }
