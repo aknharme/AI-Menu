@@ -1,11 +1,12 @@
-import { useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 
-// restaurantId ve tableId ileride QR linkinden gelen query paramlarla okunur.
 export function useQueryParams() {
   const [searchParams] = useSearchParams();
+  const params = useParams();
 
   return {
-    restaurantId: searchParams.get('restaurantId') ?? undefined,
-    tableId: searchParams.get('tableId') ?? undefined,
+    restaurantId:
+      params.restaurantId ?? searchParams.get('restaurantId') ?? undefined,
+    tableId: params.tableId ?? searchParams.get('tableId') ?? undefined,
   };
 }
