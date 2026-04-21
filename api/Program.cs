@@ -74,6 +74,7 @@ var host = new WebHostBuilder()
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<ICashierService, CashierService>();
     })
     .Configure(app =>
     {

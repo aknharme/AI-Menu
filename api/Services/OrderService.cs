@@ -10,6 +10,21 @@ public class OrderService(IOrderRepository orderRepository) : IOrderService
 {
     public async Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto request, CancellationToken cancellationToken = default)
     {
+        if (request.RestaurantId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Restaurant id is required.");
+        }
+
+        if (request.TableId == Guid.Empty)
+        {
+            throw new InvalidOperationException("Table id is required.");
+        }
+
+        if (request.Items.Count == 0)
+        {
+            throw new InvalidOperationException("At least one item is required to create an order.");
+        }
+
         // Siparis verilen masa gercekten ilgili restorana ait olmali.
         var table = await orderRepository.GetTableAsync(request.RestaurantId, request.TableId, cancellationToken);
         if (table is null)
@@ -27,6 +42,23 @@ public class OrderService(IOrderRepository orderRepository) : IOrderService
             throw new InvalidOperationException("One or more requested products were not found in this restaurant menu.");
         }
 
+        var variantIds = request.Items
+            .Where(x => x.VariantId.HasValue)
+            .Select(x => x.VariantId!.Value)
+            .Distinct()
+            .ToList();
+
+        var variants = variantIds.Count == 0
+            ? Array.Empty<ProductVariant>()
+            : (await orderRepository.GetActiveVariantsByIdsAsync(request.RestaurantId, variantIds, cancellationToken)).ToArray();
+
+        var variantMap = variants.ToDictionary(x => x.ProductVariantId);
+
+        if (variantMap.Count != variantIds.Count)
+        {
+            throw new InvalidOperationException("One or more requested variants were not found in this restaurant menu.");
+        }
+
         var order = new Order
         {
             OrderId = Guid.NewGuid(),
@@ -41,8 +73,24 @@ public class OrderService(IOrderRepository orderRepository) : IOrderService
         foreach (var item in request.Items)
         {
             var product = productMap[item.ProductId];
+            ProductVariant? variant = null;
+
+            if (item.VariantId.HasValue)
+            {
+                if (!variantMap.TryGetValue(item.VariantId.Value, out variant))
+                {
+                    throw new InvalidOperationException("Requested variant was not found.");
+                }
+
+                if (variant.ProductId != product.ProductId)
+                {
+                    throw new InvalidOperationException("Selected variant does not belong to the requested product.");
+                }
+            }
+
             // Siparis satiri toplami backend'de hesaplanir; client verisine guvenilmez.
-            var lineTotal = product.Price * item.Quantity;
+            var unitPrice = product.Price + (variant?.PriceDelta ?? 0m);
+            var lineTotal = unitPrice * item.Quantity;
 
             order.Items.Add(new OrderItem
             {
@@ -50,8 +98,10 @@ public class OrderService(IOrderRepository orderRepository) : IOrderService
                 RestaurantId = request.RestaurantId,
                 OrderId = order.OrderId,
                 ProductId = product.ProductId,
+                ProductVariantId = variant?.ProductVariantId,
+                Note = item.Note.Trim(),
                 Quantity = item.Quantity,
-                UnitPrice = product.Price,
+                UnitPrice = unitPrice,
                 LineTotal = lineTotal
             });
         }
@@ -62,21 +112,52 @@ public class OrderService(IOrderRepository orderRepository) : IOrderService
         var createdOrder = await orderRepository.AddOrderAsync(order, cancellationToken);
 
         // Response DTO, entity'yi dis dunyaya birebir acmadan API cevabi uretir.
+        return MapOrder(createdOrder, productMap, variantMap);
+    }
+
+    public async Task<OrderResponseDto?> GetOrderAsync(Guid orderId, CancellationToken cancellationToken = default)
+    {
+        if (orderId == Guid.Empty)
+        {
+            return null;
+        }
+
+        var order = await orderRepository.GetOrderAsync(orderId, cancellationToken);
+        if (order is null)
+        {
+            return null;
+        }
+
+        return MapOrder(order);
+    }
+
+    private static OrderResponseDto MapOrder(
+        Order order,
+        IReadOnlyDictionary<Guid, Product>? productMap = null,
+        IReadOnlyDictionary<Guid, ProductVariant>? variantMap = null)
+    {
         return new OrderResponseDto
         {
-            OrderId = createdOrder.OrderId,
-            RestaurantId = createdOrder.RestaurantId,
-            TableId = createdOrder.TableId,
-            CustomerName = createdOrder.CustomerName,
-            Note = createdOrder.Note,
-            Status = createdOrder.Status,
-            TotalAmount = createdOrder.TotalAmount,
-            CreatedAtUtc = createdOrder.CreatedAtUtc,
-            Items = createdOrder.Items.Select(item => new OrderItemResponseDto
+            OrderId = order.OrderId,
+            RestaurantId = order.RestaurantId,
+            TableId = order.TableId,
+            CustomerName = order.CustomerName,
+            Note = order.Note,
+            Status = order.Status,
+            TotalAmount = order.TotalAmount,
+            CreatedAtUtc = order.CreatedAtUtc,
+            Items = order.Items.Select(item => new OrderItemResponseDto
             {
                 OrderItemId = item.OrderItemId,
                 ProductId = item.ProductId,
-                ProductName = productMap[item.ProductId].Name,
+                ProductName = productMap?.GetValueOrDefault(item.ProductId)?.Name ?? item.Product.Name,
+                VariantId = item.ProductVariantId,
+                VariantName = item.ProductVariantId.HasValue
+                    ? variantMap?.GetValueOrDefault(item.ProductVariantId.Value)?.Name
+                        ?? item.ProductVariant?.Name
+                        ?? string.Empty
+                    : string.Empty,
+                Note = item.Note,
                 Quantity = item.Quantity,
                 UnitPrice = item.UnitPrice,
                 LineTotal = item.LineTotal
