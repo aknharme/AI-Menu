@@ -105,7 +105,15 @@ namespace AiMenu.Api.Data.Migrations
                     b.Property<Guid>("OrderId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<Guid>("ProductId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ProductVariantId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Quantity")
@@ -123,6 +131,8 @@ namespace AiMenu.Api.Data.Migrations
                     b.HasIndex("OrderId");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("ProductVariantId");
 
                     b.HasIndex("RestaurantId");
 
@@ -357,6 +367,11 @@ namespace AiMenu.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("AiMenu.Api.Entities.ProductVariant", "ProductVariant")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("ProductVariantId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
                         .WithMany("OrderItems")
                         .HasForeignKey("RestaurantId")
@@ -366,6 +381,8 @@ namespace AiMenu.Api.Data.Migrations
                     b.Navigation("Order");
 
                     b.Navigation("Product");
+
+                    b.Navigation("ProductVariant");
 
                     b.Navigation("Restaurant");
                 });
@@ -500,6 +517,11 @@ namespace AiMenu.Api.Data.Migrations
             modelBuilder.Entity("AiMenu.Api.Entities.Table", b =>
                 {
                     b.Navigation("Orders");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.ProductVariant", b =>
+                {
+                    b.Navigation("OrderItems");
                 });
 #pragma warning restore 612, 618
         }

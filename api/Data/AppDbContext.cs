@@ -143,6 +143,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<OrderItem>(entity =>
         {
             entity.HasKey(x => x.OrderItemId);
+            entity.Property(x => x.Note).HasMaxLength(500);
             entity.Property(x => x.UnitPrice).HasPrecision(10, 2);
             entity.Property(x => x.LineTotal).HasPrecision(10, 2);
             entity.HasOne(x => x.Restaurant)
@@ -156,6 +157,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasOne(x => x.Product)
                 .WithMany(x => x.OrderItems)
                 .HasForeignKey(x => x.ProductId)
+                .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(x => x.ProductVariant)
+                .WithMany(x => x.OrderItems)
+                .HasForeignKey(x => x.ProductVariantId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
