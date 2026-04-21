@@ -1,25 +1,23 @@
 import { Outlet } from 'react-router-dom';
 
-// AdminLayout panel ekranlarında ortak header ve içerik genişliğini sağlar.
 export default function AdminLayout() {
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(245,158,11,0.15),_transparent_30%),linear-gradient(180deg,_#fffaf5_0%,_#f5f5f4_100%)]">
+      <header className="sticky top-0 z-20 border-b border-stone-200/80 bg-white/90 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
-              Restoran Yönetimi
+            <p className="text-xs font-medium uppercase tracking-[0.24em] text-stone-500">
+              Restoran Yonetimi
             </p>
-            <h1 className="text-lg font-semibold text-gray-900">Admin Panel</h1>
+            <h1 className="text-lg font-semibold text-stone-950">Admin Paneli</h1>
           </div>
-          <button className="rounded-md border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700">
-            Çıkış
-          </button>
+          <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm text-stone-700">
+            Catalog
+          </span>
         </div>
       </header>
 
-      {/* Dashboard ve ileride eklenecek admin sayfaları burada gösterilir. */}
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-7xl px-4 py-6">
         <Outlet />
       </main>
     </div>

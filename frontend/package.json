@@ -1,0 +1,23 @@
+{
+  "name": "ai-menu-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "npm --prefix customer-web run dev",
+    "dev:customer": "npm --prefix customer-web run dev",
+    "dev:admin": "npm --prefix admin-web run dev",
+    "dev:cashier": "npm --prefix cashier-web run dev",
+    "dev-customer": "npm --prefix customer-web run dev",
+    "dev-admin": "npm --prefix admin-web run dev",
+    "dev-cashier": "npm --prefix cashier-web run dev",
+    "build": "npm --prefix customer-web run build",
+    "build:customer": "npm --prefix customer-web run build",
+    "build:admin": "npm --prefix admin-web run build",
+    "build:cashier": "npm --prefix cashier-web run build",
+    "build:all": "npm --prefix customer-web run build && npm --prefix admin-web run build && npm --prefix cashier-web run build",
+    "build-customer": "npm --prefix customer-web run build",
+    "build-admin": "npm --prefix admin-web run build",
+    "build-cashier": "npm --prefix cashier-web run build",
+    "build-all": "npm --prefix customer-web run build && npm --prefix admin-web run build && npm --prefix cashier-web run build"
+  }
+}

@@ -72,9 +72,11 @@ var host = new WebHostBuilder()
         // Katmanli mimaride dependency'ler burada uygulamaya baglanir.
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IAdminCatalogRepository, AdminCatalogRepository>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICashierService, CashierService>();
+        services.AddScoped<IAdminCatalogService, AdminCatalogService>();
     })
     .Configure(app =>
     {
