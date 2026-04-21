@@ -40,9 +40,9 @@ jobs:
       fail-fast: false
       matrix:
         app:
-          - customer-web
-          - admin-web
-          - cashier-web
+          - frontend/customer-web
+          - frontend/admin-web
+          - frontend/cashier-web
 
     steps:
       - name: Checkout

@@ -9,5 +9,17 @@ public interface IOrderRepository
         Guid restaurantId,
         IReadOnlyCollection<Guid> productIds,
         CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<ProductVariant>> GetActiveVariantsByIdsAsync(
+        Guid restaurantId,
+        IReadOnlyCollection<Guid> variantIds,
+        CancellationToken cancellationToken = default);
     Task<Order> AddOrderAsync(Order order, CancellationToken cancellationToken = default);
+    Task<Order?> GetOrderAsync(Guid orderId, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<Order>> GetCashierOrdersAsync(
+        Guid restaurantId,
+        CancellationToken cancellationToken = default);
+    Task<Order?> GetCashierOrderAsync(
+        Guid restaurantId,
+        Guid orderId,
+        CancellationToken cancellationToken = default);
 }
