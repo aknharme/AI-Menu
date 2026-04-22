@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import AdminLayout from '../layouts/AdminLayout';
 import DashboardPage from '../pages/DashboardPage';
+import TablesPage from '../pages/TablesPage';
 
 export const router = createBrowserRouter([
   {
@@ -10,6 +11,10 @@ export const router = createBrowserRouter([
       {
         index: true,
         element: <DashboardPage />,
+      },
+      {
+        path: 'tables',
+        element: <TablesPage />,
       },
     ],
   },

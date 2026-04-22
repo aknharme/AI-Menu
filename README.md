@@ -12,9 +12,19 @@ Bu repo ekipteki backend, customer, admin ve cashier gelistirmelerini ayni yerde
 - `infra`: docker ve nginx konfigrasyonlari
 - `docs`: repo yapisi, branch akisi ve notlar
 
+## Masa ve QR Akisi
+
+- Her masa `restaurantId` ve `tableId` ile baglidir.
+- Admin panel her masa icin benzersiz menu URL'si uretir.
+- Ornek URL: `/menu?restaurantId=11111111-1111-1111-1111-111111111111&tableId=44444444-4444-4444-4444-444444444441`
+- QR kod bu URL'yi tasir; musteri dogru restoran ve masa baglami ile menuyu acar.
+- Siparis olusturma sirasinda `tableId` backend'e zorunlu olarak gonderilir.
+
+Detayli manuel kontrol adimlari icin [docs/table-qr-smoke-test.md](docs/table-qr-smoke-test.md) dosyasina bakilabilir.
+
 ## Kullanilan Teknolojiler
 
-- Backend: ASP.NET Core 8, Entity Framework Core, PostgreSQL
+- Backend: ASP.NET Core 9, Entity Framework Core, PostgreSQL
 - Frontend: React, Vite, TypeScript, Tailwind CSS, React Router
 - API Client: Axios
 - CI: GitHub Actions

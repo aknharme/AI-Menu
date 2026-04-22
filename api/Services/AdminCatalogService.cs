@@ -7,7 +7,8 @@ namespace AiMenu.Api.Services;
 
 public class AdminCatalogService(
     IAdminCatalogRepository adminCatalogRepository,
-    IRestaurantRepository restaurantRepository) : IAdminCatalogService
+    IRestaurantRepository restaurantRepository,
+    IConfiguration configuration) : IAdminCatalogService
 {
     public async Task<IReadOnlyCollection<AdminCategoryDto>?> GetCategoriesAsync(Guid restaurantId, CancellationToken cancellationToken = default)
     {
@@ -148,6 +149,72 @@ public class AdminCatalogService(
         return true;
     }
 
+    public async Task<IReadOnlyCollection<AdminTableDto>?> GetTablesAsync(Guid restaurantId, CancellationToken cancellationToken = default)
+    {
+        if (await restaurantRepository.GetRestaurantAsync(restaurantId, cancellationToken) is null)
+        {
+            return null;
+        }
+
+        var tables = await adminCatalogRepository.GetTablesAsync(restaurantId, cancellationToken);
+        return tables.Select(MapTable).ToList();
+    }
+
+    public async Task<AdminTableDto> CreateTableAsync(CreateAdminTableRequestDto request, CancellationToken cancellationToken = default)
+    {
+        await EnsureRestaurantExists(request.RestaurantId, cancellationToken);
+        EnsureTableNameIsValid(request.Name);
+
+        var tableId = Guid.NewGuid();
+        var table = new Table
+        {
+            TableId = tableId,
+            RestaurantId = request.RestaurantId,
+            Name = request.Name.Trim(),
+            QrCodeValue = BuildMenuUrl(request.RestaurantId, tableId),
+            IsActive = request.IsActive
+        };
+
+        var created = await adminCatalogRepository.AddTableAsync(table, cancellationToken);
+        return MapTable(created);
+    }
+
+    public async Task<AdminTableDto?> UpdateTableAsync(Guid tableId, UpdateAdminTableRequestDto request, CancellationToken cancellationToken = default)
+    {
+        await EnsureRestaurantExists(request.RestaurantId, cancellationToken);
+        EnsureTableNameIsValid(request.Name);
+
+        var table = await adminCatalogRepository.GetTableByRestaurantAsync(request.RestaurantId, tableId, cancellationToken);
+        if (table is null)
+        {
+            return null;
+        }
+
+        table.Name = request.Name.Trim();
+        table.IsActive = request.IsActive;
+        table.QrCodeValue = BuildMenuUrl(request.RestaurantId, table.TableId);
+
+        var updated = await adminCatalogRepository.UpdateTableAsync(table, cancellationToken);
+        return MapTable(updated);
+    }
+
+    public async Task<bool> DeleteTableAsync(Guid tableId, CancellationToken cancellationToken = default)
+    {
+        var table = await adminCatalogRepository.GetTableAsync(tableId, cancellationToken);
+        if (table is null)
+        {
+            return false;
+        }
+
+        if (await adminCatalogRepository.TableHasOrdersAsync(tableId, cancellationToken))
+        {
+            throw new InvalidOperationException("Table cannot be deleted while it has orders.");
+        }
+
+        await adminCatalogRepository.DeleteTableAsync(table, cancellationToken);
+        return true;
+    }
+
     private async Task EnsureRestaurantExists(Guid restaurantId, CancellationToken cancellationToken)
     {
         if (restaurantId == Guid.Empty)
@@ -159,6 +226,24 @@ public class AdminCatalogService(
         {
             throw new InvalidOperationException("Restaurant was not found or is inactive.");
         }
+    }
+
+    private static void EnsureTableNameIsValid(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            throw new InvalidOperationException("Table name is required.");
+        }
+    }
+
+    private string BuildMenuUrl(Guid restaurantId, Guid tableId)
+    {
+        var configuredBaseUrl = configuration["PublicUrls:CustomerMenuBaseUrl"]
+            ?? Environment.GetEnvironmentVariable("PUBLIC_CUSTOMER_MENU_BASE_URL")
+            ?? "http://127.0.0.1:5173/menu";
+
+        var trimmedBaseUrl = configuredBaseUrl.TrimEnd('/');
+        return $"{trimmedBaseUrl}?restaurantId={restaurantId}&tableId={tableId}";
     }
 
     private static AdminCategoryDto MapCategory(Category category)
@@ -187,6 +272,19 @@ public class AdminCatalogService(
             Description = product.Description,
             Content = product.Ingredients,
             IsActive = product.IsActive
+        };
+    }
+
+    private static AdminTableDto MapTable(Table table)
+    {
+        return new AdminTableDto
+        {
+            TableId = table.TableId,
+            RestaurantId = table.RestaurantId,
+            Name = table.Name,
+            MenuUrl = table.QrCodeValue,
+            QrCodeValue = table.QrCodeValue,
+            IsActive = table.IsActive
         };
     }
 }

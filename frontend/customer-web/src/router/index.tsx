@@ -12,6 +12,10 @@ export const router = createBrowserRouter([
         element: <MenuPage />,
       },
       {
+        path: 'menu',
+        element: <MenuPage />,
+      },
+      {
         path: 'menu/:restaurantId',
         element: <MenuPage />,
       },

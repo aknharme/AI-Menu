@@ -131,8 +131,8 @@ public static class AppDbSeeder
             TableId = tableOneId,
             RestaurantId = restaurantId,
             Name = "Masa 1",
-            // QR tarandiginda frontend bu degeri kullanarak restoran/masa baglamini yakalayabilir.
-            QrCodeValue = "demo-cafe-table-1",
+            // QR tarandiginda customer-web restoran ve masa baglamini URL query param'lariyla alir.
+            QrCodeValue = $"http://127.0.0.1:5173/menu?restaurantId={restaurantId}&tableId={tableOneId}",
             IsActive = true
         };
 

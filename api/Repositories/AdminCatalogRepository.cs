@@ -98,4 +98,49 @@ public class AdminCatalogRepository(AppDbContext dbContext) : IAdminCatalogRepos
         dbContext.Products.Remove(product);
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyCollection<Table>> GetTablesAsync(Guid restaurantId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Tables
+            .AsNoTracking()
+            .Where(x => x.RestaurantId == restaurantId)
+            .OrderBy(x => x.Name)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<Table?> GetTableAsync(Guid tableId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Tables.FirstOrDefaultAsync(x => x.TableId == tableId, cancellationToken);
+    }
+
+    public async Task<Table?> GetTableByRestaurantAsync(Guid restaurantId, Guid tableId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Tables
+            .FirstOrDefaultAsync(x => x.RestaurantId == restaurantId && x.TableId == tableId, cancellationToken);
+    }
+
+    public async Task<Table> AddTableAsync(Table table, CancellationToken cancellationToken = default)
+    {
+        await dbContext.Tables.AddAsync(table, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return table;
+    }
+
+    public async Task<Table> UpdateTableAsync(Table table, CancellationToken cancellationToken = default)
+    {
+        dbContext.Tables.Update(table);
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return table;
+    }
+
+    public async Task DeleteTableAsync(Table table, CancellationToken cancellationToken = default)
+    {
+        dbContext.Tables.Remove(table);
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<bool> TableHasOrdersAsync(Guid tableId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Orders.AnyAsync(x => x.TableId == tableId, cancellationToken);
+    }
 }

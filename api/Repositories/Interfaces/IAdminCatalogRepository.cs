@@ -18,4 +18,12 @@ public interface IAdminCatalogRepository
     Task<Product> AddProductAsync(Product product, CancellationToken cancellationToken = default);
     Task<Product> UpdateProductAsync(Product product, CancellationToken cancellationToken = default);
     Task DeleteProductAsync(Product product, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<Table>> GetTablesAsync(Guid restaurantId, CancellationToken cancellationToken = default);
+    Task<Table?> GetTableAsync(Guid tableId, CancellationToken cancellationToken = default);
+    Task<Table?> GetTableByRestaurantAsync(Guid restaurantId, Guid tableId, CancellationToken cancellationToken = default);
+    Task<Table> AddTableAsync(Table table, CancellationToken cancellationToken = default);
+    Task<Table> UpdateTableAsync(Table table, CancellationToken cancellationToken = default);
+    Task DeleteTableAsync(Table table, CancellationToken cancellationToken = default);
+    Task<bool> TableHasOrdersAsync(Guid tableId, CancellationToken cancellationToken = default);
 }

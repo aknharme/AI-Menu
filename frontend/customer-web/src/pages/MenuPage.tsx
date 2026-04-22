@@ -7,6 +7,7 @@ import ProductDetailDrawer from '../components/ProductDetailDrawer';
 import { useCart } from '../contexts/CartContext';
 import { useMenu } from '../hooks/useMenu';
 import { useQueryParams } from '../hooks/useQueryParams';
+import { formatTableLabel } from '../utils/formatTableLabel';
 
 export default function MenuPage() {
   const { restaurantId, tableId } = useQueryParams();
@@ -62,7 +63,7 @@ export default function MenuPage() {
               </h2>
             </div>
             <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm">
-              {tableId ? `Masa ${tableId}` : 'QR ile giris'}
+              {tableId ? formatTableLabel(tableId) : 'QR ile giris'}
             </div>
           </div>
 

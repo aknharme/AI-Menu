@@ -13,4 +13,9 @@ public interface IAdminCatalogService
     Task<AdminProductDto> CreateProductAsync(CreateAdminProductRequestDto request, CancellationToken cancellationToken = default);
     Task<AdminProductDto?> UpdateProductAsync(Guid productId, UpdateAdminProductRequestDto request, CancellationToken cancellationToken = default);
     Task<bool> DeleteProductAsync(Guid productId, CancellationToken cancellationToken = default);
+
+    Task<IReadOnlyCollection<AdminTableDto>?> GetTablesAsync(Guid restaurantId, CancellationToken cancellationToken = default);
+    Task<AdminTableDto> CreateTableAsync(CreateAdminTableRequestDto request, CancellationToken cancellationToken = default);
+    Task<AdminTableDto?> UpdateTableAsync(Guid tableId, UpdateAdminTableRequestDto request, CancellationToken cancellationToken = default);
+    Task<bool> DeleteTableAsync(Guid tableId, CancellationToken cancellationToken = default);
 }

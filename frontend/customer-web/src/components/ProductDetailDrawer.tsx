@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ProductDetail, ProductListItem } from '../types/menu';
 import type { AddToCartInput } from '../types/order';
 import { formatPrice } from '../utils/formatPrice';
+import { formatTableLabel } from '../utils/formatTableLabel';
 
 type ProductDetailDrawerProps = {
   isOpen: boolean;
@@ -113,7 +114,7 @@ export default function ProductDetailDrawer({
                   </p>
                   {tableId && (
                     <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
-                      Masa {tableId}
+                      {formatTableLabel(tableId)}
                     </span>
                   )}
                 </div>

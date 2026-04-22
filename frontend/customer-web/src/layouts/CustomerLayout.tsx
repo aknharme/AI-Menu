@@ -5,6 +5,7 @@ import CartDrawer from '../components/CartDrawer';
 import { useCart } from '../contexts/CartContext';
 import { useQueryParams } from '../hooks/useQueryParams';
 import { formatPrice } from '../utils/formatPrice';
+import { formatTableLabel } from '../utils/formatTableLabel';
 
 export default function CustomerLayout() {
   const { restaurantId, tableId } = useQueryParams();
@@ -24,7 +25,7 @@ export default function CustomerLayout() {
 
           <div className="flex items-center gap-3">
             <span className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-sm text-stone-700">
-              {tableId ? `Masa ${tableId}` : 'QR Siparis'}
+              {formatTableLabel(tableId)}
             </span>
             <CartButton
               itemCount={itemCount}
