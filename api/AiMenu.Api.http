@@ -21,3 +21,11 @@ GET {{AiMenu.Api_HostAddress}}/api/menu/{{RestaurantId}}/products/{{BurgerProduc
 Accept: application/json
 
 ###
+@AiMenu.Api_HostAddress = http://localhost:5268
+
+POST {{AiMenu.Api_HostAddress}}/api/recommendation
+Content-Type: application/json
+
+{
+  "prompt": "hafif bir şey istiyorum"
+}

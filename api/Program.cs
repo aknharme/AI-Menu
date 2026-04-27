@@ -1,4 +1,5 @@
 using AiMenu.Api.Data;
+using AiMenu.Api.Options;
 using AiMenu.Api.Repositories;
 using AiMenu.Api.Repositories.Interfaces;
 using AiMenu.Api.Services;
@@ -69,12 +70,23 @@ var host = new WebHostBuilder()
             options.UseNpgsql(connectionString);
         });
 
+        services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
+        services.AddHttpClient<IRecommendationService, RecommendationService>((serviceProvider, client) =>
+        {
+            var ollamaOptions = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>()
+                .Value;
+
+            client.BaseAddress = new Uri(ollamaOptions.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds));
+        });
+
         // Katmanli mimaride dependency'ler burada uygulamaya baglanir.
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
-    })
+    }) 
     .Configure(app =>
     {
         app.UseSwagger();

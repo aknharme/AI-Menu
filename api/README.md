@@ -240,6 +240,33 @@ Beklenen davranis:
 - Genel toplam olusturulur
 - Siparis `Pending` olarak kaydedilir
 
+### `POST /api/recommendation`
+
+Kullanicinin serbest metnini AI ile tag listesine cevirir.
+
+Beklenen request:
+
+```json
+{
+  "prompt": "hafif bir sey istiyorum"
+}
+```
+
+Beklenen response:
+
+```json
+{
+  "tags": ["hafif"]
+}
+```
+
+Bu endpoint'in kurallari:
+
+- AI sadece JSON doner
+- AI urun onermez
+- AI sadece etiket uretir
+- Parse edilemeyen veya hatali AI cevabinda backend fallback tag uretimi yapar
+
 ## Uygulama akisi nasil calisiyor
 
 Bir istek sisteme geldiginde genel akis su sekildedir:
