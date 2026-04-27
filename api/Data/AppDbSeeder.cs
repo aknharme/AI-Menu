@@ -23,6 +23,14 @@ public static class AppDbSeeder
         var lemonadeProductId = Guid.Parse("33333333-3333-3333-3333-333333333333");
         var inactiveProductId = Guid.Parse("33333333-3333-3333-3333-333333333334");
         var tableOneId = Guid.Parse("44444444-4444-4444-4444-444444444441");
+        var sogukTagId = Guid.Parse("55555555-5555-5555-5555-555555555541");
+        var gazliTagId = Guid.Parse("55555555-5555-5555-5555-555555555542");
+        var burgerTagId = Guid.Parse("55555555-5555-5555-5555-555555555543");
+        var anaYemekTagId = Guid.Parse("55555555-5555-5555-5555-555555555544");
+        var ferahTagId = Guid.Parse("55555555-5555-5555-5555-555555555545");
+        var icecekTagId = Guid.Parse("55555555-5555-5555-5555-555555555546");
+        var hafifTagId = Guid.Parse("55555555-5555-5555-5555-555555555547");
+        var tavukTagId = Guid.Parse("55555555-5555-5555-5555-555555555548");
 
         var restaurant = new Restaurant
         {
@@ -100,15 +108,30 @@ public static class AppDbSeeder
             }
         };
 
-        // Tag'ler AI tarafında üretilecek etiketlerle eşleşebilecek sade anahtar kelimelerdir.
+        // Tag sozlugu AI tarafinda uretilecek etiketlerle restoran bazli eslesebilecek sade anahtar kelimeleri tutar.
+        var tags = new List<Tag>
+        {
+            new Tag { TagId = sogukTagId, RestaurantId = restaurantId, Name = "soguk", NormalizedName = "soguk" },
+            new Tag { TagId = gazliTagId, RestaurantId = restaurantId, Name = "gazli", NormalizedName = "gazli" },
+            new Tag { TagId = burgerTagId, RestaurantId = restaurantId, Name = "burger", NormalizedName = "burger" },
+            new Tag { TagId = anaYemekTagId, RestaurantId = restaurantId, Name = "ana-yemek", NormalizedName = "ana-yemek" },
+            new Tag { TagId = ferahTagId, RestaurantId = restaurantId, Name = "ferah", NormalizedName = "ferah" },
+            new Tag { TagId = icecekTagId, RestaurantId = restaurantId, Name = "icecek", NormalizedName = "icecek" },
+            new Tag { TagId = hafifTagId, RestaurantId = restaurantId, Name = "hafif", NormalizedName = "hafif" },
+            new Tag { TagId = tavukTagId, RestaurantId = restaurantId, Name = "tavuk", NormalizedName = "tavuk" }
+        };
+
+        // ProductTags artik yalnizca urun ile tag sozlugu arasindaki iliskiyi tutar.
         var productTags = new List<ProductTag>
         {
-            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555551"), RestaurantId = restaurantId, ProductId = colaProductId, Name = "soguk" },
-            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555552"), RestaurantId = restaurantId, ProductId = colaProductId, Name = "gazli" },
-            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555553"), RestaurantId = restaurantId, ProductId = burgerProductId, Name = "burger" },
-            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555554"), RestaurantId = restaurantId, ProductId = burgerProductId, Name = "ana-yemek" },
-            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555555"), RestaurantId = restaurantId, ProductId = lemonadeProductId, Name = "ferah" },
-            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555556"), RestaurantId = restaurantId, ProductId = lemonadeProductId, Name = "icecek" }
+            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555551"), RestaurantId = restaurantId, ProductId = colaProductId, TagId = sogukTagId },
+            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555552"), RestaurantId = restaurantId, ProductId = colaProductId, TagId = gazliTagId },
+            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555553"), RestaurantId = restaurantId, ProductId = burgerProductId, TagId = burgerTagId },
+            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555554"), RestaurantId = restaurantId, ProductId = burgerProductId, TagId = anaYemekTagId },
+            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555555"), RestaurantId = restaurantId, ProductId = lemonadeProductId, TagId = ferahTagId },
+            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555556"), RestaurantId = restaurantId, ProductId = lemonadeProductId, TagId = icecekTagId },
+            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555557"), RestaurantId = restaurantId, ProductId = lemonadeProductId, TagId = hafifTagId },
+            new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555558"), RestaurantId = restaurantId, ProductId = burgerProductId, TagId = tavukTagId }
         };
 
         // Alerjenler sadece ürün detayında müşteriye bilgilendirme için döndürülür.
@@ -139,6 +162,7 @@ public static class AppDbSeeder
         await dbContext.Restaurants.AddAsync(restaurant);
         await dbContext.Categories.AddRangeAsync(categories);
         await dbContext.Products.AddRangeAsync(products);
+        await dbContext.Tags.AddRangeAsync(tags);
         await dbContext.ProductTags.AddRangeAsync(productTags);
         await dbContext.ProductAllergens.AddRangeAsync(productAllergens);
         await dbContext.ProductVariants.AddRangeAsync(productVariants);

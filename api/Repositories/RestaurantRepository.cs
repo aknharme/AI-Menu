@@ -24,7 +24,8 @@ public class RestaurantRepository(AppDbContext dbContext) : IRestaurantRepositor
             .AsNoTracking()
             .Where(x => x.RestaurantId == restaurantId && x.IsActive)
             .Include(x => x.Products.Where(product => product.IsActive))
-                .ThenInclude(product => product.Tags)
+                .ThenInclude(product => product.ProductTags)
+                    .ThenInclude(productTag => productTag.Tag)
             .OrderBy(x => x.DisplayOrder)
             .ThenBy(x => x.Name)
             .ToListAsync(cancellationToken);
@@ -39,7 +40,8 @@ public class RestaurantRepository(AppDbContext dbContext) : IRestaurantRepositor
             .AsNoTracking()
             .Where(x => x.RestaurantId == restaurantId && x.IsActive && x.Category.IsActive)
             .Include(x => x.Category)
-            .Include(x => x.Tags)
+            .Include(x => x.ProductTags)
+                .ThenInclude(productTag => productTag.Tag)
             .OrderBy(x => x.Category.DisplayOrder)
             .ThenBy(x => x.Name)
             .ToListAsync(cancellationToken);
@@ -55,7 +57,8 @@ public class RestaurantRepository(AppDbContext dbContext) : IRestaurantRepositor
             .AsNoTracking()
             .Where(x => x.RestaurantId == restaurantId && x.ProductId == productId && x.IsActive && x.Category.IsActive)
             .Include(x => x.Category)
-            .Include(x => x.Tags)
+            .Include(x => x.ProductTags)
+                .ThenInclude(productTag => productTag.Tag)
             .Include(x => x.Allergens)
             .Include(x => x.Variants.Where(variant => variant.IsActive))
             .FirstOrDefaultAsync(cancellationToken);

@@ -1,251 +1,108 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using AiMenu.Api.DTOs;
-using AiMenu.Api.Options;
+using AiMenu.Api.Repositories.Interfaces;
 using AiMenu.Api.Services.Interfaces;
-using Microsoft.Extensions.Options;
 
 namespace AiMenu.Api.Services;
 
-// RecommendationService, Ollama uzerinden kullanici istegini sadece tag listesine cevirir.
 public class RecommendationService(
-    HttpClient httpClient,
-    IOptions<OllamaOptions> ollamaOptions,
-    ILogger<RecommendationService> logger) : IRecommendationService
+    IRestaurantRepository restaurantRepository,
+    IRecommendationRepository recommendationRepository,
+    IAiTagService aiTagService) : IRecommendationService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
+    private const int DefaultRecommendationLimit = 6;
 
-    private static readonly Dictionary<string, string[]> FallbackTagMap = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["hafif"] = ["hafif"],
-        ["light"] = ["hafif"],
-        ["doyurucu"] = ["doyurucu"],
-        ["tok tutsun"] = ["doyurucu"],
-        ["tavuk"] = ["tavuklu"],
-        ["tavuklu"] = ["tavuklu"],
-        ["et"] = ["etli"],
-        ["etli"] = ["etli"],
-        ["vegan"] = ["vegan"],
-        ["vejetaryen"] = ["vejetaryen"],
-        ["aci"] = ["aci"],
-        ["acili"] = ["aci"],
-        ["spicy"] = ["aci"],
-        ["gluten"] = ["glutensiz"],
-        ["glutensiz"] = ["glutensiz"],
-        ["gluten hassasiyet"] = ["glutensiz"],
-        ["sekersiz"] = ["sekersiz"],
-        ["seker"] = ["sekersiz"],
-        ["sugar free"] = ["sekersiz"],
-        ["protein"] = ["protein"],
-        ["kahve"] = ["kahve"],
-        ["tatli"] = ["tatli"],
-        ["dessert"] = ["tatli"],
-        ["soguk"] = ["soguk"],
-        ["cold"] = ["soguk"],
-        ["sicak"] = ["sicak"],
-        ["hot"] = ["sicak"],
-        ["ferah"] = ["ferah"],
-        ["icecek"] = ["icecek"],
-        ["burger"] = ["burger"]
-    };
-
-    private static readonly Dictionary<string, string> CanonicalTagMap = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["light"] = "hafif",
-        ["refreshing"] = "ferah",
-        ["glutenfree"] = "glutensiz",
-        ["gluten-free"] = "glutensiz",
-        ["chicken"] = "tavuklu",
-        ["spicy"] = "aci",
-        ["sweet"] = "tatli",
-        ["cold"] = "soguk",
-        ["hot"] = "sicak",
-        ["drink"] = "icecek",
-        ["beverage"] = "icecek",
-        ["filling"] = "doyurucu",
-        ["satisfying"] = "doyurucu"
-    };
-
-    public async Task<RecommendationResponseDto> ExtractTagsAsync(
-        RecommendationRequestDto request,
+    public async Task<RecommendationResponseDto?> GetProductsByTagsAsync(
+        RecommendationProductsRequestDto request,
         CancellationToken cancellationToken = default)
     {
-        var prompt = request.Prompt.Trim();
-        if (string.IsNullOrWhiteSpace(prompt))
+        var restaurant = await restaurantRepository.GetRestaurantAsync(request.RestaurantId, cancellationToken);
+        if (restaurant is null)
         {
-            return new RecommendationResponseDto();
+            return null;
         }
 
-        try
+        var normalizedTags = TagNormalizer.NormalizeMany(request.Tags);
+        var matchedProducts = await recommendationRepository.GetRecommendedProductsAsync(
+            request.RestaurantId,
+            normalizedTags,
+            DefaultRecommendationLimit,
+            cancellationToken);
+
+        if (matchedProducts.Count > 0)
         {
-            using var response = await httpClient.PostAsJsonAsync(
-                "api/generate",
-                new OllamaGenerateRequest
-                {
-                    Model = ollamaOptions.Value.Model,
-                    Prompt = BuildPrompt(prompt),
-                    Stream = false,
-                    Format = "json"
-                },
-                cancellationToken);
-
-            response.EnsureSuccessStatusCode();
-
-            var ollamaResponse = await response.Content.ReadFromJsonAsync<OllamaGenerateResponse>(JsonOptions, cancellationToken);
-            var parsedTags = ParseTags(ollamaResponse?.Response);
-
-            if (parsedTags.Count > 0)
+            // Tag bazli eslesme varsa fallback'e dusmeden dogrudan alakali urunler donulur.
+            return new RecommendationResponseDto
             {
-                return new RecommendationResponseDto
-                {
-                    Tags = parsedTags
-                };
-            }
+                RestaurantId = request.RestaurantId,
+                Tags = normalizedTags,
+                IsFallback = false,
+                Message = "Tag eslesmesine gore oneriler getirildi.",
+                Products = matchedProducts
+            };
         }
-        catch (Exception exception)
-        {
-            logger.LogWarning(exception, "Ollama tag extraction failed. Falling back to deterministic tags.");
-        }
+
+        var fallbackProducts = await recommendationRepository.GetFallbackProductsAsync(
+            request.RestaurantId,
+            DefaultRecommendationLimit,
+            cancellationToken);
 
         return new RecommendationResponseDto
         {
-            Tags = ExtractFallbackTags(prompt)
+            RestaurantId = request.RestaurantId,
+            Tags = normalizedTags,
+            IsFallback = true,
+            Message = normalizedTags.Count == 0
+                ? "AI uygun tag uretemedigi icin populer urunler gosterildi."
+                : "Eslesen tag bulunamadigi icin populer urunler gosterildi.",
+            Products = fallbackProducts
         };
     }
 
-    private static string BuildPrompt(string userPrompt)
+    public async Task<AiTagResponseDto> GenerateTagsAsync(
+        RecommendationPromptRequestDto request,
+        CancellationToken cancellationToken = default)
     {
-        return
-            """
-            You are a tag extraction engine for a restaurant QR menu.
-            Your job is only to convert the user's text into menu filter tags.
-
-            Rules:
-            - Return valid JSON only.
-            - Do not return markdown.
-            - Do not explain anything.
-            - Do not suggest products.
-            - Do not invent products.
-            - Stay within restaurant menu intent.
-            - Output format must be exactly: {"tags":["tag1","tag2"]}.
-            - Tags must be short, lowercase, and deduplicated.
-            - Prefer Turkish menu tags such as hafif, doyurucu, tavuklu, glutensiz, soguk, sicak, ferah, icecek.
-            - If the text is unclear, return {"tags":[]}.
-
-            User text:
-            """
-            + "\n"
-            + userPrompt;
-    }
-
-    private static List<string> ParseTags(string? rawResponse)
-    {
-        if (string.IsNullOrWhiteSpace(rawResponse))
-        {
-            return [];
-        }
-
-        var normalized = ExtractJsonPayload(rawResponse);
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            return [];
-        }
-
+        // Prompt endpoint'i urun secmez; AI ulasilamazsa bos tag listesi donerek akisi kirmaz.
+        IReadOnlyCollection<string> tags;
         try
         {
-            using var document = JsonDocument.Parse(normalized);
-            if (document.RootElement.ValueKind == JsonValueKind.Object &&
-                document.RootElement.TryGetProperty("tags", out var tagsElement) &&
-                tagsElement.ValueKind == JsonValueKind.Array)
-            {
-                return NormalizeTags(tagsElement.EnumerateArray()
-                    .Where(x => x.ValueKind == JsonValueKind.String)
-                    .Select(x => x.GetString())
-                    .OfType<string>());
-            }
-
-            if (document.RootElement.ValueKind == JsonValueKind.Array)
-            {
-                return NormalizeTags(document.RootElement.EnumerateArray()
-                    .Where(x => x.ValueKind == JsonValueKind.String)
-                    .Select(x => x.GetString())
-                    .OfType<string>());
-            }
+            tags = await aiTagService.GenerateTagsAsync(request.Prompt, cancellationToken);
         }
         catch
         {
-            return [];
+            tags = Array.Empty<string>();
         }
 
-        return [];
+        return new AiTagResponseDto
+        {
+            Tags = tags
+        };
     }
 
-    private static string? ExtractJsonPayload(string rawResponse)
+    public async Task<RecommendationResponseDto?> GetProductsByPromptAsync(
+        RecommendationPromptRequestDto request,
+        CancellationToken cancellationToken = default)
     {
-        var trimmed = rawResponse.Trim();
-        if (trimmed.StartsWith("```", StringComparison.Ordinal))
+        // Prompt akisi once AI'den tag uretir; AI ulasilamazsa deneyim kopmasin diye fallback onerilere iner.
+        AiTagResponseDto tags;
+        try
         {
-            trimmed = trimmed.Replace("```json", string.Empty, StringComparison.OrdinalIgnoreCase)
-                .Replace("```", string.Empty, StringComparison.Ordinal)
-                .Trim();
+            tags = await GenerateTagsAsync(request, cancellationToken);
         }
-
-        var objectStart = trimmed.IndexOf('{');
-        var objectEnd = trimmed.LastIndexOf('}');
-        if (objectStart >= 0 && objectEnd > objectStart)
+        catch
         {
-            return trimmed[objectStart..(objectEnd + 1)];
-        }
-
-        var arrayStart = trimmed.IndexOf('[');
-        var arrayEnd = trimmed.LastIndexOf(']');
-        if (arrayStart >= 0 && arrayEnd > arrayStart)
-        {
-            return trimmed[arrayStart..(arrayEnd + 1)];
-        }
-
-        return null;
-    }
-
-    private static List<string> ExtractFallbackTags(string prompt)
-    {
-        var lowered = prompt.ToLowerInvariant();
-        var tags = new List<string>();
-
-        foreach (var entry in FallbackTagMap)
-        {
-            if (lowered.Contains(entry.Key.ToLowerInvariant(), StringComparison.Ordinal))
+            tags = new AiTagResponseDto
             {
-                tags.AddRange(entry.Value);
-            }
+                Tags = Array.Empty<string>()
+            };
         }
 
-        return NormalizeTags(tags);
-    }
-
-    private static List<string> NormalizeTags(IEnumerable<string> tags)
-    {
-        return tags
-            .Select(tag => tag.Trim().ToLowerInvariant())
-            .Select(tag => CanonicalTagMap.TryGetValue(tag, out var canonicalTag) ? canonicalTag : tag)
-            .Where(tag => !string.IsNullOrWhiteSpace(tag))
-            .Distinct()
-            .ToList();
-    }
-
-    private sealed class OllamaGenerateRequest
-    {
-        public string Model { get; set; } = string.Empty;
-        public string Prompt { get; set; } = string.Empty;
-        public bool Stream { get; set; }
-        public string Format { get; set; } = "json";
-    }
-
-    private sealed class OllamaGenerateResponse
-    {
-        public string? Response { get; set; }
+        return await GetProductsByTagsAsync(
+            new RecommendationProductsRequestDto
+            {
+                RestaurantId = request.RestaurantId,
+                Tags = tags.Tags
+            },
+            cancellationToken);
     }
 }

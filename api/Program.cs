@@ -70,8 +70,9 @@ var host = new WebHostBuilder()
             options.UseNpgsql(connectionString);
         });
 
+        // Ollama ayarlari DI container'a baglanir; AI yine sadece tag uretmekle sinirlidir.
         services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
-        services.AddHttpClient<IRecommendationService, RecommendationService>((serviceProvider, client) =>
+        services.AddHttpClient<IAiTagService, OllamaTagService>((serviceProvider, client) =>
         {
             var ollamaOptions = serviceProvider
                 .GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>()
@@ -83,10 +84,14 @@ var host = new WebHostBuilder()
 
         // Katmanli mimaride dependency'ler burada uygulamaya baglanir.
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
+        services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
+        services.AddScoped<IRecommendationRepository, RecommendationRepository>();
+        services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
-    }) 
+        services.AddScoped<IRecommendationService, RecommendationService>();
+    })
     .Configure(app =>
     {
         app.UseSwagger();
