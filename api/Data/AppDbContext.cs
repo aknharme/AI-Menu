@@ -10,9 +10,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Restaurant> Restaurants => Set<Restaurant>();
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
-    // Ürün detayında gösterilen varyant, alerjen ve tag tabloları.
+    // Urun detayinda gosterilen varyant, alerjen ve tag tablolari.
     public DbSet<ProductVariant> ProductVariants => Set<ProductVariant>();
     public DbSet<ProductAllergen> ProductAllergens => Set<ProductAllergen>();
+    public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<ProductTag> ProductTags => Set<ProductTag>();
     public DbSet<Table> Tables => Set<Table>();
     public DbSet<Order> Orders => Set<Order>();
@@ -57,6 +58,24 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(x => x.Products)
                 .HasForeignKey(x => x.CategoryId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Restoran + aktiflik filtresi onerilerde sik kullanildigi icin index eklenir.
+            entity.HasIndex(x => new { x.RestaurantId, x.IsActive });
+        });
+
+        modelBuilder.Entity<Tag>(entity =>
+        {
+            // Tag sozlugu restorana ozel ve normalize edilmis isimle tekil tutulur.
+            entity.HasKey(x => x.TagId);
+            entity.Property(x => x.Name).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.NormalizedName).HasMaxLength(80).IsRequired();
+
+            entity.HasOne(x => x.Restaurant)
+                .WithMany(x => x.Tags)
+                .HasForeignKey(x => x.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => new { x.RestaurantId, x.NormalizedName }).IsUnique();
         });
 
         modelBuilder.Entity<ProductVariant>(entity =>
@@ -96,9 +115,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<ProductTag>(entity =>
         {
-            // Tag kayıtları hem AI filtreleme sözlüğü hem de müşteri etiketi olarak kullanılır.
+            // ProductTags join tablosu urunleri restoran bazli tag sozlugune baglar.
             entity.HasKey(x => x.ProductTagId);
-            entity.Property(x => x.Name).HasMaxLength(80).IsRequired();
 
             entity.HasOne(x => x.Restaurant)
                 .WithMany(x => x.ProductTags)
@@ -106,9 +124,17 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(x => x.Product)
-                .WithMany(x => x.Tags)
+                .WithMany(x => x.ProductTags)
                 .HasForeignKey(x => x.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Tag)
+                .WithMany(x => x.ProductTags)
+                .HasForeignKey(x => x.TagId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => new { x.ProductId, x.TagId }).IsUnique();
+            entity.HasIndex(x => new { x.RestaurantId, x.TagId });
         });
 
         modelBuilder.Entity<Table>(entity =>

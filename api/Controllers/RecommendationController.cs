@@ -6,14 +6,37 @@ namespace AiMenu.Api.Controllers;
 
 [ApiController]
 [Route("api/recommendation")]
-// RecommendationController yalnizca kullanici metnini alip AI tag extraction servisine iletir.
+// RecommendationController, AI'nin tag uretimi ile backend urun filtrelemesini baglayan HTTP katmanidir.
 public class RecommendationController(IRecommendationService recommendationService) : ControllerBase
 {
-    [HttpPost]
+    [HttpPost("products")]
     [ProducesResponseType(typeof(RecommendationResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Post(
-        [FromBody] RecommendationRequestDto request,
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetRecommendedProducts(
+        [FromBody] RecommendationProductsRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (request.RestaurantId == Guid.Empty)
+        {
+            return BadRequest(new { message = "Restaurant id is required." });
+        }
+
+        var response = await recommendationService.GetProductsByTagsAsync(request, cancellationToken);
+        if (response is null)
+        {
+            return NotFound(new { message = "Restaurant was not found or is inactive." });
+        }
+
+        return Ok(response);
+    }
+
+    [HttpPost("tags")]
+    [HttpPost]
+    [ProducesResponseType(typeof(AiTagResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GenerateTags(
+        [FromBody] RecommendationPromptRequestDto request,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request.Prompt))
@@ -21,7 +44,28 @@ public class RecommendationController(IRecommendationService recommendationServi
             return BadRequest(new { message = "Prompt is required." });
         }
 
-        var response = await recommendationService.ExtractTagsAsync(request, cancellationToken);
+        return Ok(await recommendationService.GenerateTagsAsync(request, cancellationToken));
+    }
+
+    [HttpPost("prompt")]
+    [ProducesResponseType(typeof(RecommendationResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetRecommendedProductsByPrompt(
+        [FromBody] RecommendationPromptRequestDto request,
+        CancellationToken cancellationToken)
+    {
+        if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Prompt))
+        {
+            return BadRequest(new { message = "Restaurant id and prompt are required." });
+        }
+
+        var response = await recommendationService.GetProductsByPromptAsync(request, cancellationToken);
+        if (response is null)
+        {
+            return NotFound(new { message = "Restaurant was not found or is inactive." });
+        }
+
         return Ok(response);
     }
 }

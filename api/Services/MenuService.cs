@@ -84,9 +84,9 @@ public class MenuService(IRestaurantRepository restaurantRepository) : IMenuServ
                 .OrderBy(x => x.Name)
                 .Select(x => x.Name)
                 .ToList(),
-            Tags = product.Tags
-                .OrderBy(x => x.Name)
-                .Select(x => x.Name)
+            Tags = product.ProductTags
+                .OrderBy(x => x.Tag.Name)
+                .Select(x => x.Tag.Name)
                 .ToList(),
             Variants = product.Variants
                 .OrderBy(x => x.Name)
@@ -122,9 +122,9 @@ public class MenuService(IRestaurantRepository restaurantRepository) : IMenuServ
                         Name = product.Name,
                         Description = product.Description,
                         Price = product.Price,
-                        Tags = product.Tags
-                            .OrderBy(x => x.Name)
-                            .Select(x => x.Name)
+                        Tags = product.ProductTags
+                            .OrderBy(x => x.Tag.Name)
+                            .Select(x => x.Tag.Name)
                             .ToList()
                     })
                     .ToList()
@@ -143,9 +143,9 @@ public class MenuService(IRestaurantRepository restaurantRepository) : IMenuServ
             Name = product.Name,
             Description = product.Description,
             Price = product.Price,
-            Tags = product.Tags
-                .OrderBy(x => x.Name)
-                .Select(x => x.Name)
+            Tags = product.ProductTags
+                .OrderBy(x => x.Tag.Name)
+                .Select(x => x.Tag.Name)
                 .ToList()
         };
     }

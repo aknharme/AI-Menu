@@ -42,6 +42,23 @@ export type ProductDetail = {
   variants: ProductVariant[];
 };
 
+// RecommendationProduct, onerilen urun karti icin gereken sade backend cevabini temsil eder.
+export type RecommendationProduct = {
+  productId: string;
+  name: string;
+  price: number;
+  description: string;
+};
+
+// RecommendationResponse, AI tag cikarma ve fallback bilgisini frontend'e tasir.
+export type RecommendationResponse = {
+  restaurantId: string;
+  tags: string[];
+  isFallback: boolean;
+  message: string;
+  products: RecommendationProduct[];
+};
+
 export type MenuQueryParams = {
   restaurantId?: string;
   tableId?: string;
