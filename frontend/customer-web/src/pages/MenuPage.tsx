@@ -4,6 +4,7 @@ import EmptyState from '../components/EmptyState';
 import LoadingState from '../components/LoadingState';
 import ProductCard from '../components/ProductCard';
 import ProductDetailDrawer from '../components/ProductDetailDrawer';
+import { useCart } from '../contexts/CartContext';
 import { useMenu } from '../hooks/useMenu';
 import { useQueryParams } from '../hooks/useQueryParams';
 import { getRecommendationsByPrompt } from '../services/menuService';
@@ -13,6 +14,7 @@ import { formatPrice } from '../utils/formatPrice';
 // MenuPage, menu listeleme ile AI destekli urun onerisi deneyimini ayni ekranda toplar.
 export default function MenuPage() {
   const { restaurantId, tableId } = useQueryParams();
+  const { addToCart } = useCart();
   const {
     loading,
     error,
@@ -98,10 +100,10 @@ export default function MenuPage() {
 
   const activeCategoryName = useMemo(() => {
     if (!activeCategoryId) {
-      return 'Menü';
+      return 'Menu';
     }
 
-    return categories.find((category) => category.categoryId === activeCategoryId)?.name ?? 'Menü';
+    return categories.find((category) => category.categoryId === activeCategoryId)?.name ?? 'Menu';
   }, [activeCategoryId, categories]);
 
   return (
@@ -114,17 +116,17 @@ export default function MenuPage() {
                 Customer Web
               </p>
               <h2 className="mt-2 text-3xl font-semibold">
-                {menu?.restaurantName ?? 'Restoran Menüsü'}
+                {menu?.restaurantName ?? 'Restoran Menusu'}
               </h2>
             </div>
             <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm">
-              {tableId ? `Masa ${tableId}` : 'QR ile giriş'}
+              {tableId ? `Masa ${tableId}` : 'QR ile giris'}
             </div>
           </div>
 
           <p className="max-w-2xl text-sm leading-7 text-stone-200">
-            Kategoriler arasında gez, ürün detaylarını incele ve siparişe eklemek
-            istediğin ürünleri kolayca seç.
+            Kategoriler arasinda gez, urun detaylarini incele ve siparise eklemek
+            istedigin urunleri kolayca sec.
           </p>
 
           <div className="grid gap-3 sm:grid-cols-3">
@@ -133,12 +135,12 @@ export default function MenuPage() {
               <p className="mt-2 text-2xl font-semibold">{categories.length}</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-stone-300">Aktif Ürün</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-stone-300">Aktif Urun</p>
               <p className="mt-2 text-2xl font-semibold">{products.length}</p>
             </div>
             <div className="rounded-2xl bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-stone-300">Öne Çıkan</p>
-              <p className="mt-2 text-lg font-semibold">{featuredCategory?.name ?? 'Hazırlanıyor'}</p>
+              <p className="text-xs uppercase tracking-[0.2em] text-stone-300">One Cikan</p>
+              <p className="mt-2 text-lg font-semibold">{featuredCategory?.name ?? 'Hazirlaniyor'}</p>
             </div>
           </div>
         </div>
@@ -235,11 +237,11 @@ export default function MenuPage() {
       {loading ? (
         <LoadingState count={5} />
       ) : error ? (
-        <EmptyState title="Menü şu anda yüklenemedi" description={error} />
+        <EmptyState title="Menu su anda yuklenemedi" description={error} />
       ) : categories.length === 0 ? (
         <EmptyState
-          title="Aktif ürün bulunamadı"
-          description="Bu restoran için şu anda yayında olan bir ürün görünmüyor."
+          title="Aktif urun bulunamadi"
+          description="Bu restoran icin su anda yayinda olan bir urun gorunmuyor."
         />
       ) : (
         <>
@@ -255,11 +257,11 @@ export default function MenuPage() {
             <div className="flex items-end justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
-                  Menü Listesi
+                  Menu Listesi
                 </p>
                 <h3 className="mt-2 text-2xl font-semibold text-stone-950">{activeCategoryName}</h3>
               </div>
-              <p className="text-sm text-stone-500">{visibleProducts.length} ürün</p>
+              <p className="text-sm text-stone-500">{visibleProducts.length} urun</p>
             </div>
 
             <div className="grid gap-4">
@@ -282,6 +284,7 @@ export default function MenuPage() {
         isLoading={productDetailLoading}
         error={productDetailError}
         tableId={tableId}
+        onAddToCart={addToCart}
         onClose={() => setSelectedProduct(null)}
       />
     </div>

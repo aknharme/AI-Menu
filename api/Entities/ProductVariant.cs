@@ -12,4 +12,5 @@ public class ProductVariant
 
     public Restaurant Restaurant { get; set; } = null!;
     public Product Product { get; set; } = null!;
+    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }

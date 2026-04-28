@@ -10,6 +10,8 @@ namespace AiMenu.Api.Controllers;
 public class OrdersController(IOrderService orderService) : ControllerBase
 {
     [HttpPost]
+    [ProducesResponseType(typeof(OrderResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ApiErrorResponseDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateOrder(
         [FromBody] CreateOrderRequestDto request,
         CancellationToken cancellationToken)
@@ -21,7 +23,27 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new { message = exception.Message });
+            return BadRequest(new ApiErrorResponseDto { Message = exception.Message });
         }
+    }
+
+    [HttpGet("{orderId:guid}")]
+    [ProducesResponseType(typeof(OrderResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ApiErrorResponseDto), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ApiErrorResponseDto), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetOrder(Guid orderId, CancellationToken cancellationToken)
+    {
+        if (orderId == Guid.Empty)
+        {
+            return BadRequest(new ApiErrorResponseDto { Message = "Order id is required." });
+        }
+
+        var order = await orderService.GetOrderAsync(orderId, cancellationToken);
+        if (order is null)
+        {
+            return NotFound(new ApiErrorResponseDto { Message = "Order was not found." });
+        }
+
+        return Ok(order);
     }
 }

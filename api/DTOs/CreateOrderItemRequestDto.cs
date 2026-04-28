@@ -9,4 +9,9 @@ public class CreateOrderItemRequestDto
 
     [Range(1, 99)]
     public int Quantity { get; set; }
+
+    public Guid? VariantId { get; set; }
+
+    [MaxLength(500)]
+    public string Note { get; set; } = string.Empty;
 }
