@@ -1,5 +1,8 @@
+using System.Security.Claims;
+using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AiMenu.Api.Controllers;
@@ -7,6 +10,7 @@ namespace AiMenu.Api.Controllers;
 [ApiController]
 [Route("api/admin")]
 // AdminController, kategori, urun ve masa CRUD endpoint'lerini tek admin alani altinda toplar.
+[Authorize(Roles = AppRoles.Admin)]
 public class AdminController(IAdminService adminService) : ControllerBase
 {
     [HttpGet("categories/{restaurantId:guid}")]
@@ -14,9 +18,14 @@ public class AdminController(IAdminService adminService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetCategories(Guid restaurantId, CancellationToken cancellationToken)
     {
+        if (!IsRestaurantAccessAllowed(restaurantId))
+        {
+            return Forbid();
+        }
+
         var response = await adminService.GetCategoriesAsync(restaurantId, cancellationToken);
         return response is null
-            ? NotFound(new { message = "Restaurant was not found or is inactive." })
+            ? NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound))
             : Ok(response);
     }
 
@@ -28,12 +37,17 @@ public class AdminController(IAdminService adminService) : ControllerBase
     {
         if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Name))
         {
-            return BadRequest(new { message = "Restaurant id and category name are required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id and category name are required.", ApiErrorCodes.BadRequest));
+        }
+
+        if (!IsRestaurantAccessAllowed(request.RestaurantId))
+        {
+            return Forbid();
         }
 
         var response = await adminService.CreateCategoryAsync(request, cancellationToken);
         return response is null
-            ? NotFound(new { message = "Restaurant was not found or is inactive." })
+            ? NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound))
             : Created($"/api/admin/categories/{response.CategoryId}", response);
     }
 
@@ -45,12 +59,17 @@ public class AdminController(IAdminService adminService) : ControllerBase
     {
         if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Name))
         {
-            return BadRequest(new { message = "Restaurant id and category name are required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id and category name are required.", ApiErrorCodes.BadRequest));
+        }
+
+        if (!IsRestaurantAccessAllowed(request.RestaurantId))
+        {
+            return Forbid();
         }
 
         var response = await adminService.UpdateCategoryAsync(id, request, cancellationToken);
         return response is null
-            ? NotFound(new { message = "Category was not found for this restaurant." })
+            ? NotFound(ApiErrorResponseDto.Create("Category was not found for this restaurant.", ApiErrorCodes.NotFound))
             : Ok(response);
     }
 
@@ -64,12 +83,12 @@ public class AdminController(IAdminService adminService) : ControllerBase
         {
             var response = await adminService.DeleteCategoryAsync(id, cancellationToken);
             return response is null
-                ? NotFound(new { message = "Category was not found." })
+                ? NotFound(ApiErrorResponseDto.Create("Category was not found.", ApiErrorCodes.NotFound))
                 : NoContent();
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new { message = exception.Message });
+            return BadRequest(ApiErrorResponseDto.Create(exception.Message, ApiErrorCodes.BadRequest));
         }
     }
 
@@ -78,9 +97,14 @@ public class AdminController(IAdminService adminService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetProducts(Guid restaurantId, CancellationToken cancellationToken)
     {
+        if (!IsRestaurantAccessAllowed(restaurantId))
+        {
+            return Forbid();
+        }
+
         var response = await adminService.GetProductsAsync(restaurantId, cancellationToken);
         return response is null
-            ? NotFound(new { message = "Restaurant was not found or is inactive." })
+            ? NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound))
             : Ok(response);
     }
 
@@ -92,19 +116,24 @@ public class AdminController(IAdminService adminService) : ControllerBase
     {
         if (request.RestaurantId == Guid.Empty || request.CategoryId == Guid.Empty || string.IsNullOrWhiteSpace(request.Name))
         {
-            return BadRequest(new { message = "Restaurant id, category id and product name are required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id, category id and product name are required.", ApiErrorCodes.BadRequest));
+        }
+
+        if (!IsRestaurantAccessAllowed(request.RestaurantId))
+        {
+            return Forbid();
         }
 
         try
         {
             var response = await adminService.CreateProductAsync(request, cancellationToken);
             return response is null
-                ? NotFound(new { message = "Restaurant was not found or is inactive." })
+                ? NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound))
                 : Created($"/api/admin/products/{response.ProductId}", response);
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new { message = exception.Message });
+            return BadRequest(ApiErrorResponseDto.Create(exception.Message, ApiErrorCodes.BadRequest));
         }
     }
 
@@ -116,19 +145,24 @@ public class AdminController(IAdminService adminService) : ControllerBase
     {
         if (request.RestaurantId == Guid.Empty || request.CategoryId == Guid.Empty || string.IsNullOrWhiteSpace(request.Name))
         {
-            return BadRequest(new { message = "Restaurant id, category id and product name are required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id, category id and product name are required.", ApiErrorCodes.BadRequest));
+        }
+
+        if (!IsRestaurantAccessAllowed(request.RestaurantId))
+        {
+            return Forbid();
         }
 
         try
         {
             var response = await adminService.UpdateProductAsync(id, request, cancellationToken);
             return response is null
-                ? NotFound(new { message = "Product was not found for this restaurant." })
+                ? NotFound(ApiErrorResponseDto.Create("Product was not found for this restaurant.", ApiErrorCodes.NotFound))
                 : Ok(response);
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new { message = exception.Message });
+            return BadRequest(ApiErrorResponseDto.Create(exception.Message, ApiErrorCodes.BadRequest));
         }
     }
 
@@ -142,12 +176,12 @@ public class AdminController(IAdminService adminService) : ControllerBase
         {
             var response = await adminService.DeleteProductAsync(id, cancellationToken);
             return response is null
-                ? NotFound(new { message = "Product was not found." })
+                ? NotFound(ApiErrorResponseDto.Create("Product was not found.", ApiErrorCodes.NotFound))
                 : NoContent();
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new { message = exception.Message });
+            return BadRequest(ApiErrorResponseDto.Create(exception.Message, ApiErrorCodes.BadRequest));
         }
     }
 
@@ -156,9 +190,14 @@ public class AdminController(IAdminService adminService) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetTables(Guid restaurantId, CancellationToken cancellationToken)
     {
+        if (!IsRestaurantAccessAllowed(restaurantId))
+        {
+            return Forbid();
+        }
+
         var response = await adminService.GetTablesAsync(restaurantId, cancellationToken);
         return response is null
-            ? NotFound(new { message = "Restaurant was not found or is inactive." })
+            ? NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound))
             : Ok(response);
     }
 
@@ -170,12 +209,17 @@ public class AdminController(IAdminService adminService) : ControllerBase
     {
         if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Name))
         {
-            return BadRequest(new { message = "Restaurant id and table name are required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id and table name are required.", ApiErrorCodes.BadRequest));
+        }
+
+        if (!IsRestaurantAccessAllowed(request.RestaurantId))
+        {
+            return Forbid();
         }
 
         var response = await adminService.CreateTableAsync(request, cancellationToken);
         return response is null
-            ? NotFound(new { message = "Restaurant was not found or is inactive." })
+            ? NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound))
             : Created($"/api/admin/tables/{response.TableId}", response);
     }
 
@@ -187,12 +231,17 @@ public class AdminController(IAdminService adminService) : ControllerBase
     {
         if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Name))
         {
-            return BadRequest(new { message = "Restaurant id and table name are required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id and table name are required.", ApiErrorCodes.BadRequest));
+        }
+
+        if (!IsRestaurantAccessAllowed(request.RestaurantId))
+        {
+            return Forbid();
         }
 
         var response = await adminService.UpdateTableAsync(id, request, cancellationToken);
         return response is null
-            ? NotFound(new { message = "Table was not found for this restaurant." })
+            ? NotFound(ApiErrorResponseDto.Create("Table was not found for this restaurant.", ApiErrorCodes.NotFound))
             : Ok(response);
     }
 
@@ -206,12 +255,19 @@ public class AdminController(IAdminService adminService) : ControllerBase
         {
             var response = await adminService.DeleteTableAsync(id, cancellationToken);
             return response is null
-                ? NotFound(new { message = "Table was not found." })
+                ? NotFound(ApiErrorResponseDto.Create("Table was not found.", ApiErrorCodes.NotFound))
                 : NoContent();
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new { message = exception.Message });
+            return BadRequest(ApiErrorResponseDto.Create(exception.Message, ApiErrorCodes.BadRequest));
         }
+    }
+
+    private bool IsRestaurantAccessAllowed(Guid restaurantId)
+    {
+        // Token icindeki restaurantId claim'i ile istek restorani eslestirilir.
+        var claimValue = User.FindFirstValue("restaurantId");
+        return Guid.TryParse(claimValue, out var claimedRestaurantId) && claimedRestaurantId == restaurantId;
     }
 }

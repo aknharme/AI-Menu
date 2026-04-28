@@ -24,4 +24,10 @@ public interface IAdminRepository
     Task<Table> AddTableAsync(Table table, CancellationToken cancellationToken = default);
     Task DeleteTableAsync(Table table, CancellationToken cancellationToken = default);
     Task<bool> HasOrdersForTableAsync(Guid tableId, CancellationToken cancellationToken = default);
+
+    Task<int> GetOrderCountAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, CancellationToken cancellationToken = default);
+    Task<int> GetPendingOrderCountAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<Order>> GetRecentOrdersAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, int limit, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<(Guid ProductId, string Name, int Count)>> GetTopOrderedProductsAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, int limit, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<(Guid ProductId, string Name, int Count)>> GetTopRecommendedProductsAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, int limit, CancellationToken cancellationToken = default);
 }

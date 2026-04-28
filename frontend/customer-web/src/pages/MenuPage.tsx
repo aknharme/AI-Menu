@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import CategoryTabs from '../components/CategoryTabs';
 import EmptyState from '../components/EmptyState';
+import InlineAlert from '../components/InlineAlert';
 import LoadingState from '../components/LoadingState';
 import ProductCard from '../components/ProductCard';
 import ProductDetailDrawer from '../components/ProductDetailDrawer';
@@ -10,6 +11,9 @@ import { useQueryParams } from '../hooks/useQueryParams';
 import { getRecommendationsByPrompt } from '../services/menuService';
 import type { RecommendationResponse } from '../types/menu';
 import { formatPrice } from '../utils/formatPrice';
+import { extractApiErrorMessage } from '../utils/apiError';
+
+const PROMPT_MAX_LENGTH = 300;
 
 // MenuPage, menu listeleme ile AI destekli urun onerisi deneyimini ayni ekranda toplar.
 export default function MenuPage() {
@@ -53,14 +57,24 @@ export default function MenuPage() {
       return;
     }
 
+    if (prompt.trim().length > PROMPT_MAX_LENGTH) {
+      setRecommendationError(`Prompt en fazla ${PROMPT_MAX_LENGTH} karakter olabilir.`);
+      return;
+    }
+
     try {
       setRecommendationLoading(true);
       setRecommendationError(null);
       const response = await getRecommendationsByPrompt(restaurantId, prompt.trim());
       setRecommendation(response);
-    } catch {
+    } catch (requestError: any) {
       setRecommendation(null);
-      setRecommendationError('Öneriler şu anda getirilemedi. Lütfen tekrar deneyin.');
+      setRecommendationError(
+        extractApiErrorMessage(
+          requestError,
+          'Öneriler şu anda getirilemedi. Lütfen tekrar deneyin.',
+        ),
+      );
     } finally {
       setRecommendationLoading(false);
     }
@@ -120,7 +134,7 @@ export default function MenuPage() {
               </h2>
             </div>
             <div className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-sm">
-              {tableId ? `Masa ${tableId}` : 'QR ile giris'}
+              {tableId ? 'Masaya bagli siparis' : 'QR ile giris'}
             </div>
           </div>
 
@@ -140,7 +154,7 @@ export default function MenuPage() {
             </div>
             <div className="rounded-2xl bg-white/10 p-4">
               <p className="text-xs uppercase tracking-[0.2em] text-stone-300">One Cikan</p>
-              <p className="mt-2 text-lg font-semibold">{featuredCategory?.name ?? 'Hazirlaniyor'}</p>
+              <p className="mt-2 text-lg font-semibold">{featuredCategory?.name ?? 'Menu'}</p>
             </div>
           </div>
         </div>
@@ -161,10 +175,14 @@ export default function MenuPage() {
           <textarea
             value={prompt}
             onChange={(event) => setPrompt(event.target.value)}
+            maxLength={PROMPT_MAX_LENGTH}
             rows={4}
             placeholder="Canım hafif ama doyurucu bir şey istiyor..."
             className="w-full rounded-[24px] border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-900 outline-none transition focus:border-amber-400 focus:bg-white focus:ring-4 focus:ring-amber-100"
           />
+          <div className="text-right text-xs text-stone-400">
+            {prompt.trim().length}/{PROMPT_MAX_LENGTH}
+          </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -182,11 +200,7 @@ export default function MenuPage() {
           </div>
         </form>
 
-        {recommendationError && (
-          <div className="mt-4 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-            {recommendationError}
-          </div>
-        )}
+        {recommendationError ? <div className="mt-4"><InlineAlert message={recommendationError} /></div> : null}
 
         {recommendation && (
           <div className="mt-5 space-y-4">

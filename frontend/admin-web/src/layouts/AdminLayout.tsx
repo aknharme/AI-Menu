@@ -1,16 +1,23 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useRestaurantContext } from '../hooks/useRestaurantContext';
+import { clearAuthSession, getStoredUser } from '../services/authStorage';
 
 // AdminLayout panel ekranlarında ortak header ve içerik genişliğini sağlar.
 export default function AdminLayout() {
-  const location = useLocation();
+  const navigate = useNavigate();
   const { restaurantId } = useRestaurantContext();
+  const user = getStoredUser();
   const navItems = [
     { label: 'Dashboard', path: '/' },
     { label: 'Kategoriler', path: '/categories' },
     { label: 'Ürünler', path: '/products' },
     { label: 'Masalar', path: '/tables' },
   ];
+
+  function handleLogout() {
+    clearAuthSession();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,_#fffdf8_0%,_#f5f5f4_100%)]">
@@ -21,9 +28,19 @@ export default function AdminLayout() {
               Restoran Yönetimi
             </p>
             <h1 className="text-lg font-semibold text-stone-950">Admin Panel</h1>
+            <p className="mt-1 text-sm text-stone-500">{user?.fullName ?? 'Bilinmeyen Kullanici'}</p>
           </div>
-          <div className="rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm text-stone-600">
-            restaurantId: {restaurantId}
+          <div className="flex items-center gap-3">
+            <div className="rounded-full border border-stone-200 bg-stone-50 px-4 py-2 text-sm text-stone-600">
+              restaurantId: {restaurantId}
+            </div>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700 transition hover:bg-stone-100"
+            >
+              Cikis Yap
+            </button>
           </div>
         </div>
 
@@ -31,7 +48,7 @@ export default function AdminLayout() {
           {navItems.map((item) => (
             <NavLink
               key={item.path}
-              to={{ pathname: item.path, search: location.search }}
+              to={item.path}
               className={({ isActive }) =>
                 [
                   'rounded-full px-4 py-2 text-sm font-medium transition',

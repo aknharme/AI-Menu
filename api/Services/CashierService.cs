@@ -5,8 +5,20 @@ using AiMenu.Api.Services.Interfaces;
 
 namespace AiMenu.Api.Services;
 
-public class CashierService(IOrderRepository orderRepository, IRestaurantRepository restaurantRepository) : ICashierService
+public class CashierService(
+    IOrderRepository orderRepository,
+    IRestaurantRepository restaurantRepository,
+    ILogService logService) : ICashierService
 {
+    private static readonly HashSet<string> AllowedStatuses =
+    [
+        "Pending",
+        "Preparing",
+        "Ready",
+        "Paid",
+        "Cancelled"
+    ];
+
     public async Task<IReadOnlyCollection<CashierOrderListDto>?> GetOrdersAsync(
         Guid restaurantId,
         CancellationToken cancellationToken = default)
@@ -50,6 +62,50 @@ public class CashierService(IOrderRepository orderRepository, IRestaurantReposit
         }
 
         return MapDetail(order);
+    }
+
+    public async Task<CashierOrderDetailDto?> UpdateOrderStatusAsync(
+        Guid restaurantId,
+        Guid orderId,
+        string status,
+        CancellationToken cancellationToken = default)
+    {
+        if (await restaurantRepository.GetRestaurantAsync(restaurantId, cancellationToken) is null)
+        {
+            return null;
+        }
+
+        var normalizedStatus = (status ?? string.Empty).Trim();
+        if (!AllowedStatuses.Contains(normalizedStatus))
+        {
+            throw new InvalidOperationException("Order status is invalid.");
+        }
+
+        var order = await orderRepository.GetOrderForUpdateAsync(restaurantId, orderId, cancellationToken);
+        if (order is null)
+        {
+            return null;
+        }
+
+        if (order.Status == normalizedStatus)
+        {
+            var currentOrder = await orderRepository.GetCashierOrderAsync(restaurantId, orderId, cancellationToken);
+            return currentOrder is null ? null : MapDetail(currentOrder);
+        }
+
+        var previousStatus = order.Status;
+        order.Status = normalizedStatus;
+        await orderRepository.SaveChangesAsync(cancellationToken);
+        await logService.LogOrderStatusAsync(
+            restaurantId,
+            order.OrderId,
+            previousStatus,
+            normalizedStatus,
+            null,
+            cancellationToken);
+
+        var updatedOrder = await orderRepository.GetCashierOrderAsync(restaurantId, orderId, cancellationToken);
+        return updatedOrder is null ? null : MapDetail(updatedOrder);
     }
 
     private static CashierOrderDetailDto MapDetail(Order order)

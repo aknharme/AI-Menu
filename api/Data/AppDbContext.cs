@@ -18,6 +18,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Table> Tables => Set<Table>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<RecommendationLog> RecommendationLogs => Set<RecommendationLog>();
+    public DbSet<OrderStatusLog> OrderStatusLogs => Set<OrderStatusLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -29,6 +33,87 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(x => x.Name).HasMaxLength(150).IsRequired();
             entity.Property(x => x.Slug).HasMaxLength(150).IsRequired();
             entity.HasIndex(x => x.Slug).IsUnique();
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            // Kullanici tablosu JWT login icin email ve hash bilgilerini restoran baglaminda saklar.
+            entity.HasKey(x => x.UserId);
+            entity.Property(x => x.FullName).HasMaxLength(150).IsRequired();
+            entity.Property(x => x.Email).HasMaxLength(180).IsRequired();
+            entity.Property(x => x.PasswordHash).HasMaxLength(500).IsRequired();
+            entity.Property(x => x.Role).HasMaxLength(40).IsRequired();
+
+            entity.HasOne(x => x.Restaurant)
+                .WithMany(x => x.Users)
+                .HasForeignKey(x => x.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => x.Email).IsUnique();
+            entity.HasIndex(x => new { x.RestaurantId, x.Role });
+        });
+
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            // Audit loglari degisen kayit ve yapan kullanici baglamini sade tutar.
+            entity.HasKey(x => x.AuditLogId);
+            entity.Property(x => x.ActionType).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.EntityType).HasMaxLength(80).IsRequired();
+            entity.Property(x => x.Description).HasMaxLength(600).IsRequired();
+
+            entity.HasOne(x => x.Restaurant)
+                .WithMany(x => x.AuditLogs)
+                .HasForeignKey(x => x.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.User)
+                .WithMany(x => x.AuditLogs)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(x => new { x.RestaurantId, x.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<RecommendationLog>(entity =>
+        {
+            // Prompt, tag listesi ve onerilen urun id'leri JSON string olarak saklanir.
+            entity.HasKey(x => x.RecommendationLogId);
+            entity.Property(x => x.Prompt).HasMaxLength(1000).IsRequired();
+            entity.Property(x => x.ExtractedTags).HasColumnType("text").IsRequired();
+            entity.Property(x => x.RecommendedProducts).HasColumnType("text").IsRequired();
+
+            entity.HasOne(x => x.Restaurant)
+                .WithMany(x => x.RecommendationLogs)
+                .HasForeignKey(x => x.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(x => new { x.RestaurantId, x.CreatedAtUtc });
+        });
+
+        modelBuilder.Entity<OrderStatusLog>(entity =>
+        {
+            // Siparis durum loglari olusturma ve sonraki durum gecislerini ayni tabloda toplar.
+            entity.HasKey(x => x.OrderStatusLogId);
+            entity.Property(x => x.OldStatus).HasMaxLength(40);
+            entity.Property(x => x.NewStatus).HasMaxLength(40).IsRequired();
+
+            entity.HasOne(x => x.Restaurant)
+                .WithMany(x => x.OrderStatusLogs)
+                .HasForeignKey(x => x.RestaurantId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.Order)
+                .WithMany(x => x.StatusLogs)
+                .HasForeignKey(x => x.OrderId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(x => x.ChangedByUser)
+                .WithMany(x => x.OrderStatusLogs)
+                .HasForeignKey(x => x.ChangedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(x => new { x.RestaurantId, x.ChangedAtUtc });
+            entity.HasIndex(x => new { x.OrderId, x.ChangedAtUtc });
         });
 
         modelBuilder.Entity<Category>(entity =>

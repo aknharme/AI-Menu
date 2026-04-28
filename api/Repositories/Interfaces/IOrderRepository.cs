@@ -22,4 +22,6 @@ public interface IOrderRepository
         Guid restaurantId,
         Guid orderId,
         CancellationToken cancellationToken = default);
+    Task<Order?> GetOrderForUpdateAsync(Guid restaurantId, Guid orderId, CancellationToken cancellationToken = default);
+    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -24,6 +24,11 @@ function buildCartItemId(productId: string, variantId?: string) {
   return `${productId}:${variantId ?? 'base'}`;
 }
 
+function normalizeQuantity(quantity: number) {
+  // Backend 1-99 araligini kabul ettigi icin frontend de ayni siniri uygular.
+  return Math.max(1, Math.min(99, quantity));
+}
+
 export function CartProvider({ children }: PropsWithChildren) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
@@ -48,7 +53,7 @@ export function CartProvider({ children }: PropsWithChildren) {
                 productId: input.productId,
                 productName: input.productName,
                 categoryName: input.categoryName,
-                quantity: input.quantity,
+                quantity: normalizeQuantity(input.quantity),
                 note: input.note.trim(),
                 unitPrice: input.unitPrice,
                 basePrice: input.basePrice,
@@ -62,7 +67,7 @@ export function CartProvider({ children }: PropsWithChildren) {
             item.cartItemId === cartItemId
               ? {
                   ...item,
-                  quantity: item.quantity + input.quantity,
+                  quantity: normalizeQuantity(item.quantity + input.quantity),
                   note: input.note.trim() || item.note,
                   unitPrice: input.unitPrice,
                   variantName: input.variantName ?? item.variantName,
@@ -85,7 +90,7 @@ export function CartProvider({ children }: PropsWithChildren) {
               return [];
             }
 
-            return [{ ...item, quantity }];
+            return [{ ...item, quantity: normalizeQuantity(quantity) }];
           }),
         );
       },

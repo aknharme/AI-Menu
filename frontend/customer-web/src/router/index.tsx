@@ -12,6 +12,11 @@ export const router = createBrowserRouter([
         element: <MenuPage />,
       },
       {
+        // QR akisinda kullanilan /menu?restaurantId=... yolu query string ile birlikte desteklenir.
+        path: 'menu',
+        element: <MenuPage />,
+      },
+      {
         path: 'menu/:restaurantId',
         element: <MenuPage />,
       },

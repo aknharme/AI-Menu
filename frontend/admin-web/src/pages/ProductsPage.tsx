@@ -1,4 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
+import EmptyState from '../components/EmptyState';
+import InlineAlert from '../components/InlineAlert';
+import LoadingState from '../components/LoadingState';
 import { useRestaurantContext } from '../hooks/useRestaurantContext';
 import {
   createProduct,
@@ -12,6 +15,7 @@ import type {
   AdminProduct,
   SaveAdminProductRequest,
 } from '../types/admin';
+import { extractApiErrorMessage } from '../utils/apiError';
 
 type ProductFormState = {
   name: string;
@@ -88,6 +92,10 @@ export default function ProductsPage() {
       return 'Fiyat sayısal olmalıdır.';
     }
 
+    if (Number(form.price) < 0) {
+      return 'Fiyat negatif olamaz.';
+    }
+
     return null;
   }
 
@@ -123,7 +131,7 @@ export default function ProductsPage() {
       resetForm();
       await loadData();
     } catch (submitError: any) {
-      setError(submitError?.response?.data?.message ?? 'Ürün kaydedilemedi.');
+      setError(extractApiErrorMessage(submitError, 'Ürün kaydedilemedi.'));
     } finally {
       setSaving(false);
     }
@@ -138,7 +146,7 @@ export default function ProductsPage() {
       }
       await loadData();
     } catch (deleteError: any) {
-      setError(deleteError?.response?.data?.message ?? 'Ürün silinemedi.');
+      setError(extractApiErrorMessage(deleteError, 'Ürün silinemedi.'));
     }
   }
 
@@ -232,11 +240,7 @@ export default function ProductsPage() {
             />
           </label>
 
-          {error && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
+          {error ? <InlineAlert message={error} /> : null}
 
           <div className="flex gap-3">
             <button
@@ -249,6 +253,7 @@ export default function ProductsPage() {
             <button
               type="button"
               onClick={resetForm}
+              disabled={saving}
               className="rounded-full border border-stone-300 px-5 py-3 text-sm font-semibold text-stone-700"
             >
               Temizle
@@ -266,7 +271,13 @@ export default function ProductsPage() {
         </div>
 
         {loading ? (
-          <p className="mt-5 text-sm text-stone-500">Ürünler yükleniyor...</p>
+          <div className="mt-5">
+            <LoadingState count={4} />
+          </div>
+        ) : products.length === 0 ? (
+          <div className="mt-5">
+            <EmptyState title="Urun yok" description="Henuz urun eklenmedi." />
+          </div>
         ) : (
           <div className="mt-5 space-y-3">
             {products.map((product) => (

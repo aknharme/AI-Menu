@@ -1,4 +1,7 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import EmptyState from '../components/EmptyState';
+import InlineAlert from '../components/InlineAlert';
+import LoadingState from '../components/LoadingState';
 import { QRCodeSVG } from 'qrcode.react';
 import { useRestaurantContext } from '../hooks/useRestaurantContext';
 import {
@@ -8,6 +11,7 @@ import {
   updateTable,
 } from '../services/adminService';
 import type { AdminTable, SaveAdminTableRequest } from '../types/admin';
+import { extractApiErrorMessage } from '../utils/apiError';
 
 type TableFormState = {
   name: string;
@@ -89,7 +93,7 @@ export default function TablesPage() {
       resetForm();
       await loadTables();
     } catch (submitError: any) {
-      setError(submitError?.response?.data?.message ?? 'Masa kaydedilemedi.');
+      setError(extractApiErrorMessage(submitError, 'Masa kaydedilemedi.'));
     } finally {
       setSaving(false);
     }
@@ -104,7 +108,7 @@ export default function TablesPage() {
       }
       await loadTables();
     } catch (deleteError: any) {
-      setError(deleteError?.response?.data?.message ?? 'Masa silinemedi.');
+      setError(extractApiErrorMessage(deleteError, 'Masa silinemedi.'));
     }
   }
 
@@ -171,11 +175,7 @@ export default function TablesPage() {
             />
           </label>
 
-          {error && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
+          {error ? <InlineAlert message={error} /> : null}
 
           <div className="flex gap-3">
             <button
@@ -188,6 +188,7 @@ export default function TablesPage() {
             <button
               type="button"
               onClick={resetForm}
+              disabled={saving}
               className="rounded-full border border-stone-300 px-5 py-3 text-sm font-semibold text-stone-700"
             >
               Temizle
@@ -205,9 +206,13 @@ export default function TablesPage() {
         </div>
 
         {loading ? (
-          <p className="mt-5 text-sm text-stone-500">Masalar yükleniyor...</p>
+          <div className="mt-5">
+            <LoadingState count={4} />
+          </div>
         ) : tables.length === 0 ? (
-          <p className="mt-5 text-sm text-stone-500">Henüz masa bulunmuyor.</p>
+          <div className="mt-5">
+            <EmptyState title="Masa yok" description="Henuz masa eklenmedi." />
+          </div>
         ) : (
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             {tables.map((table) => (

@@ -1,139 +1,43 @@
 # AI Menu
 
-Multi-restaurant QR menu ve siparis sistemi icin hazirlanmis mono-repo proje yapisi.
-Bu repo ekipteki backend, customer, admin ve cashier gelistirmelerini ayni yerde yonetmek icin tasarlanmistir.
+AI Menu, multi-restaurant destekli QR menu, siparis, admin ve cashier yonetimi sunan full-stack bir demo projedir. Sistem; customer tarafinda QR ile menu acma, siparis olusturma, cashier tarafinda siparis durum yonetimi ve admin tarafinda urun, kategori, masa, log, dashboard ve AI destekli onerileri bir araya getirir.
 
-## Proje Ozeti
+## Proje Kapsami
 
-- `api`: ASP.NET Core Web API
-- `frontend/customer-web`: QR ile acilan musteri arayuzu
-- `frontend/admin-web`: restoran yonetim paneli
-- `frontend/cashier-web`: siparis operasyon ekranlari
-- `infra`: docker ve nginx konfigrasyonlari
-- `docs`: repo yapisi, branch akisi ve notlar
+- Customer: QR ile menuye giris, kategori bazli gezinme, urun detayi, sepete ekleme, siparis olusturma, AI destekli urun onerisi
+- Admin: dashboard, kategori yonetimi, urun yonetimi, masa ve QR yonetimi, audit ve recommendation loglari
+- Cashier: aktif siparisleri gorme, durum guncelleme
+- Backend: JWT auth, role bazli yetkilendirme, validation, global error handling, recommendation ve log servisleri
 
-## Kullanilan Teknolojiler
+## Teknolojiler
 
 - Backend: ASP.NET Core 8, Entity Framework Core, PostgreSQL
 - Frontend: React, Vite, TypeScript, Tailwind CSS, React Router
-- API Client: Axios
-- CI: GitHub Actions
+- Auth: JWT
+- AI: Ollama
 - Infra: Docker Compose, Nginx
 
-## Klasor Agaci
+## Demo Verisi
 
-```text
-AI-MENU/
-|-- .github/
-|   `-- workflows/
-|       `-- build-check.yml
-|-- api/
-|   |-- Controllers/
-|   |   |-- MenuController.cs
-|   |   `-- OrdersController.cs
-|   |-- Data/
-|   |   |-- AppDbContext.cs
-|   |   `-- AppDbSeeder.cs
-|   |-- DTOs/
-|   |   |-- CreateOrderItemRequestDto.cs
-|   |   |-- CreateOrderRequestDto.cs
-|   |   |-- MenuCategoryDto.cs
-|   |   |-- MenuProductDto.cs
-|   |   |-- MenuResponseDto.cs
-|   |   |-- OrderItemResponseDto.cs
-|   |   `-- OrderResponseDto.cs
-|   |-- Entities/
-|   |   |-- Category.cs
-|   |   |-- Order.cs
-|   |   |-- OrderItem.cs
-|   |   |-- Product.cs
-|   |   |-- Restaurant.cs
-|   |   `-- Table.cs
-|   |-- Properties/
-|   |   `-- launchSettings.json
-|   |-- Repositories/
-|   |   |-- Interfaces/
-|   |   |   |-- IOrderRepository.cs
-|   |   |   `-- IRestaurantRepository.cs
-|   |   |-- OrderRepository.cs
-|   |   `-- RestaurantRepository.cs
-|   |-- Services/
-|   |   |-- Interfaces/
-|   |   |   |-- IMenuService.cs
-|   |   |   `-- IOrderService.cs
-|   |   |-- MenuService.cs
-|   |   `-- OrderService.cs
-|   |-- AiMenu.Api.csproj
-|   |-- AiMenu.Api.http
-|   |-- appsettings.json
-|   |-- Program.cs
-|   `-- README.md
-|-- docs/
-|   |-- branching-strategy.md
-|   |-- frontend-ports.md
-|   `-- repository-tree.md
-|-- frontend/
-|   |-- admin-web/
-|   |   |-- src/
-|   |   |-- .env.example
-|   |   |-- index.html
-|   |   `-- package.json
-|   |-- cashier-web/
-|   |   |-- src/
-|   |   |-- .env.example
-|   |   |-- index.html
-|   |   `-- package.json
-|   `-- customer-web/
-|       |-- src/
-|       |-- .env.example
-|       |-- index.html
-|       `-- package.json
-|-- infra/
-|   |-- nginx/
-|   |   `-- default.conf
-|   |-- docker-compose.dev.yml
-|   `-- README.md
-|-- .gitignore
-|-- AI-Menu.sln
-`-- database.sql
-```
+Uygulama ilk acilista ornek veri ile baslar:
 
-Detayli aciklama icin [docs/repository-tree.md](docs/repository-tree.md) dosyasina bakilabilir.
+- 1 restoran: `Demo Cafe`
+- 4 kategori
+- 10 urun
+- 3 masa ve QR baglantisi
+- ornek siparis gecmisi
+- recommendation ve audit log kayitlari
 
-## Branch Yapisi
+Demo kullanicilari:
 
-- `main`: production branch
-- `develop`: aktif gelistirme branch'i
-- `feature/*`: yeni ozellik gelistirmeleri
-- `bugfix/*`: hata duzeltmeleri
+- Admin: `admin@demo.com` / `Admin123!`
+- Cashier: `cashier@demo.com` / `Cashier123!`
 
-Detayli kurallar [docs/branching-strategy.md](docs/branching-strategy.md) icinde yer alir.
+Ornek restoran kimligi:
 
-## Feature Branch Nasil Acilir
+- `11111111-1111-1111-1111-111111111111`
 
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b feature/menu-filter
-```
-
-Bugfix icin:
-
-```bash
-git checkout develop
-git pull origin develop
-git checkout -b bugfix/order-total
-```
-
-## Merge ve PR Kurallari
-
-- Dogrudan `main` veya `develop` branch'ine commit atilmaz.
-- Her is ayrica bir `feature/*` veya `bugfix/*` branch'inde yapilir.
-- Her branch GitHub'a push edilir ve `develop` hedefli PR acilir.
-- Build check gecmeden merge yapilmaz.
-- Production'a cikacak toplu degisiklikler `develop -> main` PR'i ile ilerler.
-
-## Calistirma
+## Lokal Calistirma
 
 ### Backend
 
@@ -142,8 +46,6 @@ cd api
 dotnet restore
 dotnet run
 ```
-
-Varsayilan olarak Swagger acilir. `ConnectionStrings__DefaultConnection` verilmezse InMemory database ile ayaga kalkar.
 
 ### Customer Web
 
@@ -169,35 +71,93 @@ npm install
 npm run dev
 ```
 
-### Docker ile Lokal Baslangic
+Varsayilan gelistirme akisi:
+
+- API: `http://localhost:5255` veya `https://localhost:7143`
+- Customer: `http://localhost:5173`
+- Admin: `http://localhost:5174`
+- Cashier: `http://localhost:5175`
+
+Not: Lokal portlar Vite ve launch ayarlarina gore degisebilir.
+
+## Docker ile Calistirma
+
+`.env.example` dosyasini kopyalayip proje kokunden tum sistemi tek komutla acabilirsiniz:
 
 ```bash
-cd infra
-docker compose -f docker-compose.dev.yml up --build
+cp .env.example .env
+docker compose up --build
 ```
 
-## Vite Kurulum Komutlari
+Docker uzerinden servisler:
 
-Asagidaki komutlar bu repo icindeki frontend uygulamalarinin ilk kurulum mantigini temsil eder:
+- Nginx: `http://localhost`
+- API: `http://localhost/api`
+- Customer: `http://localhost/`
+- Admin: `http://localhost/admin`
+- Cashier: `http://localhost/cashier`
+- Ollama: `http://localhost:11434`
 
-```bash
-npm create vite@latest frontend/customer-web -- --template react-ts
-npm create vite@latest frontend/admin-web -- --template react-ts
-npm create vite@latest frontend/cashier-web -- --template react-ts
-```
+## Ortam Degiskenleri
 
-Tailwind kurulumu:
+Ornek ortam degiskenleri [.env.example](.env.example) icindedir. Temel alanlar:
 
-```bash
-npm install -D tailwindcss postcss autoprefixer
-npx tailwindcss init -p
-```
+- PostgreSQL baglantisi
+- JWT secret ve token ayarlari
+- Ollama model ve port bilgisi
+- frontend `/api` base path ayarlari
 
-## Klasor Aciklamalari
+## Kisa Kullanim Rehberi
 
-- `api`: menu ve siparis endpoint'leri ile EF Core veri katmani
-- `frontend/customer-web`: QR menu deneyimi
-- `frontend/admin-web`: dashboard ve yonetim ekranlari
-- `frontend/cashier-web`: siparis operasyon arayuzu
-- `infra`: lokal docker ve reverse proxy ayarlari
-- `docs`: ekip icin repo ve surec dokumani
+### Musteri
+
+1. QR kod ile `menu?restaurantId=...&tableId=...` baglantisini acar.
+2. Kategoriler arasinda gezer ve urun detayina bakar.
+3. Urunleri sepete ekler.
+4. Siparisi gonderir.
+5. Isterse serbest metin yazarak AI destekli urun onerisi alir.
+
+### Admin
+
+1. Giris yapar.
+2. Dashboard'da siparis, populer urun ve recommendation verilerini gorur.
+3. Kategori, urun ve masa yonetimini yapar.
+4. Audit, siparis ve recommendation loglarini inceler.
+
+### Cashier
+
+1. Giris yapar.
+2. Restorana ait siparisleri listeler.
+3. Siparis durumlarini `Pending`, `Preparing`, `Ready`, `Paid` gibi adimlarda gunceller.
+
+## Demo Akisi
+
+Sunum icin onerilen temel akisi:
+
+1. Admin panelde masalari ve QR baglantisini goster
+2. Customer tarafinda QR ile menuye gir
+3. Birkac urun secip siparis olustur
+4. Cashier panelde siparisin dustugunu ve durum guncellemesini goster
+5. Admin dashboard ve log ekranlariyla hareket kaydini goster
+6. AI onerisi ile tag bazli urun filtreleme akisini goster
+
+## Temel Ozellikler
+
+- Multi-restaurant veri modeli
+- JWT tabanli auth ve role bazli yetkilendirme
+- Aktif urun filtreleme ve kategori bazli menu
+- Ollama ile JSON tabanli tag extraction
+- Backend tarafinda tag bazli recommendation
+- Audit, recommendation ve order status loglari
+- Dashboard istatistikleri
+- Validation ve standart hata response yapisi
+- Docker Compose ve Nginx reverse proxy kurulumu
+
+## Diger Dokumanlar
+
+- [frontend/frontend-readme.md](frontend/frontend-readme.md)
+- [api/backend-readme.md](api/backend-readme.md)
+- [database-readme.md](database-readme.md)
+- [ai-readme.md](ai-readme.md)
+- [infra/infra-readme.md](infra/infra-readme.md)
+- [project-overview-readme.md](project-overview-readme.md)

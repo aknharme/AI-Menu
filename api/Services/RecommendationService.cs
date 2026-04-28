@@ -7,7 +7,8 @@ namespace AiMenu.Api.Services;
 public class RecommendationService(
     IRestaurantRepository restaurantRepository,
     IRecommendationRepository recommendationRepository,
-    IAiTagService aiTagService) : IRecommendationService
+    IAiTagService aiTagService,
+    ILogService logService) : IRecommendationService
 {
     private const int DefaultRecommendationLimit = 6;
 
@@ -21,41 +22,7 @@ public class RecommendationService(
             return null;
         }
 
-        var normalizedTags = TagNormalizer.NormalizeMany(request.Tags);
-        var matchedProducts = await recommendationRepository.GetRecommendedProductsAsync(
-            request.RestaurantId,
-            normalizedTags,
-            DefaultRecommendationLimit,
-            cancellationToken);
-
-        if (matchedProducts.Count > 0)
-        {
-            // Tag bazli eslesme varsa fallback'e dusmeden dogrudan alakali urunler donulur.
-            return new RecommendationResponseDto
-            {
-                RestaurantId = request.RestaurantId,
-                Tags = normalizedTags,
-                IsFallback = false,
-                Message = "Tag eslesmesine gore oneriler getirildi.",
-                Products = matchedProducts
-            };
-        }
-
-        var fallbackProducts = await recommendationRepository.GetFallbackProductsAsync(
-            request.RestaurantId,
-            DefaultRecommendationLimit,
-            cancellationToken);
-
-        return new RecommendationResponseDto
-        {
-            RestaurantId = request.RestaurantId,
-            Tags = normalizedTags,
-            IsFallback = true,
-            Message = normalizedTags.Count == 0
-                ? "AI uygun tag uretemedigi icin populer urunler gosterildi."
-                : "Eslesen tag bulunamadigi icin populer urunler gosterildi.",
-            Products = fallbackProducts
-        };
+        return await GetProductsByTagsInternalAsync(request, string.Empty, cancellationToken);
     }
 
     public async Task<AiTagResponseDto> GenerateTagsAsync(
@@ -97,12 +64,67 @@ public class RecommendationService(
             };
         }
 
-        return await GetProductsByTagsAsync(
+        return await GetProductsByTagsInternalAsync(
             new RecommendationProductsRequestDto
             {
                 RestaurantId = request.RestaurantId,
                 Tags = tags.Tags
             },
+            request.Prompt,
             cancellationToken);
+    }
+
+    private async Task<RecommendationResponseDto?> GetProductsByTagsInternalAsync(
+        RecommendationProductsRequestDto request,
+        string prompt,
+        CancellationToken cancellationToken)
+    {
+        var normalizedTags = TagNormalizer.NormalizeMany(request.Tags);
+        var matchedProducts = await recommendationRepository.GetRecommendedProductsAsync(
+            request.RestaurantId,
+            normalizedTags,
+            DefaultRecommendationLimit,
+            cancellationToken);
+
+        RecommendationResponseDto response;
+        if (matchedProducts.Count > 0)
+        {
+            // Tag bazli eslesme varsa fallback'e dusmeden dogrudan alakali urunler donulur.
+            response = new RecommendationResponseDto
+            {
+                RestaurantId = request.RestaurantId,
+                Tags = normalizedTags,
+                IsFallback = false,
+                Message = "Tag eslesmesine gore oneriler getirildi.",
+                Products = matchedProducts
+            };
+        }
+        else
+        {
+            var fallbackProducts = await recommendationRepository.GetFallbackProductsAsync(
+                request.RestaurantId,
+                DefaultRecommendationLimit,
+                cancellationToken);
+
+            response = new RecommendationResponseDto
+            {
+                RestaurantId = request.RestaurantId,
+                Tags = normalizedTags,
+                IsFallback = true,
+                Message = normalizedTags.Count == 0
+                    ? "AI uygun tag uretemedigi icin populer urunler gosterildi."
+                    : "Eslesen tag bulunamadigi icin populer urunler gosterildi.",
+                Products = fallbackProducts
+            };
+        }
+
+        await logService.LogRecommendationAsync(
+            request.RestaurantId,
+            prompt,
+            normalizedTags,
+            response.Products.Select(product => product.ProductId).ToList(),
+            cancellationToken);
+
+        return response;
     }
 }

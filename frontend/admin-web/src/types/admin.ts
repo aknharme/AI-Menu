@@ -54,3 +54,39 @@ export type SaveAdminTableRequest = {
   name: string;
   isActive: boolean;
 };
+
+// DashboardSummary, admin panelin ozet kartlari ve liste bloklari icin gerekli toplu response modelidir.
+export type DashboardSummary = {
+  restaurantId: string;
+  date?: string | null;
+  totalOrderCount: number;
+  pendingOrderCount: number;
+  recentOrders: RecentOrder[];
+  topProducts: TopProduct[];
+  popularProducts: TopProduct[];
+  topRecommendedProducts: RecommendationStat[];
+};
+
+// TopProduct, en cok siparis edilen veya gunun populer urunlerini ayni tip ile temsil eder.
+export type TopProduct = {
+  productId: string;
+  name: string;
+  count: number;
+};
+
+// RecentOrder, dashboard'da gosterilen son siparisler satirini tasir.
+export type RecentOrder = {
+  orderId: string;
+  tableId: string;
+  tableName: string;
+  status: string;
+  totalAmount: number;
+  createdAtUtc: string;
+};
+
+// RecommendationStat, onerilerde en cok gecen urunlerin toplamini gosterir.
+export type RecommendationStat = {
+  productId: string;
+  name: string;
+  recommendationCount: number;
+};

@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
+import InlineAlert from './InlineAlert';
 import { useCart } from '../contexts/CartContext';
 import { createOrder } from '../services/orderService';
 import type { OrderResponse } from '../types/order';
 import { formatPrice } from '../utils/formatPrice';
+import { extractApiErrorMessage } from '../utils/apiError';
 
 type CartDrawerProps = {
   isOpen: boolean;
@@ -38,6 +40,22 @@ export default function CartDrawer({
 
   async function handleSubmit() {
     if (!restaurantId || !tableId || cartItems.length === 0) {
+      setError('Siparis gondermek icin restoran, masa ve en az bir urun gerekli.');
+      return;
+    }
+
+    if (customerName.trim().length > 120) {
+      setError('Musteri adi en fazla 120 karakter olabilir.');
+      return;
+    }
+
+    if (orderNote.trim().length > 500) {
+      setError('Siparis notu en fazla 500 karakter olabilir.');
+      return;
+    }
+
+    if (cartItems.some((item) => item.note.trim().length > 500)) {
+      setError('Urun notlari en fazla 500 karakter olabilir.');
       return;
     }
 
@@ -62,8 +80,13 @@ export default function CartDrawer({
       clearCart();
       setCustomerName('');
       setOrderNote('');
-    } catch {
-      setError('Sipariş gönderilemedi. Lütfen bilgileri kontrol edip tekrar deneyin.');
+    } catch (requestError: any) {
+      setError(
+        extractApiErrorMessage(
+          requestError,
+          'Sipariş gönderilemedi. Lütfen bilgileri kontrol edip tekrar deneyin.',
+        ),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -111,11 +134,7 @@ export default function CartDrawer({
             </div>
           )}
 
-          {error && (
-            <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
+          {error ? <InlineAlert message={error} /> : null}
 
           {cartItems.length === 0 ? (
             <div className="rounded-[28px] border border-dashed border-stone-300 bg-stone-50 px-6 py-10 text-center text-sm text-stone-500">
@@ -177,6 +196,7 @@ export default function CartDrawer({
                     <textarea
                       value={item.note}
                       onChange={(event) => updateItemNote(item.cartItemId, event.target.value)}
+                      maxLength={500}
                       rows={2}
                       className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400 focus:bg-white"
                       placeholder="Örn. soğansız, az buzlu"
@@ -194,6 +214,7 @@ export default function CartDrawer({
                 <input
                   value={customerName}
                   onChange={(event) => setCustomerName(event.target.value)}
+                  maxLength={120}
                   className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400"
                   placeholder="Opsiyonel"
                 />
@@ -204,6 +225,7 @@ export default function CartDrawer({
                 <input
                   value={orderNote}
                   onChange={(event) => setOrderNote(event.target.value)}
+                  maxLength={500}
                   className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400"
                   placeholder="Örn. önce içecekler gelsin"
                 />

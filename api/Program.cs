@@ -1,12 +1,19 @@
 using AiMenu.Api.Data;
+using AiMenu.Api.Constants;
+using AiMenu.Api.DTOs;
+using AiMenu.Api.Middleware;
 using AiMenu.Api.Options;
 using AiMenu.Api.Repositories;
 using AiMenu.Api.Repositories.Interfaces;
 using AiMenu.Api.Services;
 using AiMenu.Api.Services.Interfaces;
 using AiMenu.Api.Swagger;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var contentRoot = Directory.GetCurrentDirectory();
 var apiContentRoot = Path.Combine(contentRoot, "api");
@@ -41,6 +48,25 @@ var host = new WebHostBuilder()
     {
         // MVC controller endpoint'leri ve Swagger dokumani burada aktive ediliyor.
         services.AddControllers();
+        services.Configure<ApiBehaviorOptions>(options =>
+        {
+            // Model validation hatalari tek formatta frontend'e aktarilir.
+            options.InvalidModelStateResponseFactory = context =>
+            {
+                var details = context.ModelState
+                    .Values
+                    .SelectMany(value => value.Errors)
+                    .Select(error => string.IsNullOrWhiteSpace(error.ErrorMessage) ? "Invalid request." : error.ErrorMessage)
+                    .Distinct()
+                    .ToList();
+
+                return new BadRequestObjectResult(
+                    ApiErrorResponseDto.Create(
+                        "Istek dogrulama hatasi.",
+                        ApiErrorCodes.ValidationError,
+                        details));
+            };
+        });
         services.AddEndpointsApiExplorer();
         services.AddSwaggerGen(options =>
         {
@@ -72,6 +98,8 @@ var host = new WebHostBuilder()
 
         // Ollama ayarlari DI container'a baglanir; AI yine sadece tag uretmekle sinirlidir.
         services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
+        // JWT ayarlari login ve panel erisimleri icin tek noktadan okunur.
+        services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
         services.AddHttpClient<IAiTagService, OllamaTagService>((serviceProvider, client) =>
         {
             var ollamaOptions = serviceProvider
@@ -82,12 +110,42 @@ var host = new WebHostBuilder()
             client.Timeout = TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds));
         });
 
+        var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+        var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey));
+
+        // JWT middleware admin ve cashier panellerinin bearer token ile korunmasini saglar.
+        services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidateLifetime = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidAudience = jwtOptions.Audience,
+                    IssuerSigningKey = signingKey,
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+
+        // Rol bazli authorizaton policy'leri controller tarafinda sade authorize attribute'leriyle kullanilir.
+        services.AddAuthorization();
+
         // Katmanli mimaride dependency'ler burada uygulamaya baglanir.
+        services.AddHttpContextAccessor();
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
+        services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IAdminRepository, AdminRepository>();
+        services.AddScoped<ILogRepository, LogRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IRecommendationRepository, RecommendationRepository>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<ILogService, LogService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IAdminStatsService, AdminStatsService>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IRecommendationService, RecommendationService>();
@@ -95,10 +153,29 @@ var host = new WebHostBuilder()
     })
     .Configure(app =>
     {
+        app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
+        app.UseStatusCodePages(async statusCodeContext =>
+        {
+            var response = statusCodeContext.HttpContext.Response;
+            if (!response.HasStarted && response.ContentLength is null && string.IsNullOrWhiteSpace(response.ContentType))
+            {
+                response.ContentType = "application/json";
+                var errorResponse = response.StatusCode switch
+                {
+                    StatusCodes.Status401Unauthorized => ApiErrorResponseDto.Create("Bu islem icin giris yapmalisiniz.", ApiErrorCodes.Unauthorized),
+                    StatusCodes.Status403Forbidden => ApiErrorResponseDto.Create("Bu islem icin yetkiniz bulunmuyor.", ApiErrorCodes.Forbidden),
+                    StatusCodes.Status404NotFound => ApiErrorResponseDto.Create("Istenen kaynak bulunamadi.", ApiErrorCodes.NotFound),
+                    _ => ApiErrorResponseDto.Create("Istek tamamlanamadi.", ApiErrorCodes.BadRequest)
+                };
+
+                await response.WriteAsJsonAsync(errorResponse);
+            }
+        });
         app.UseSwagger();
         app.UseSwaggerUI();
         app.UseRouting();
         app.UseCors("AllowAll");
+        app.UseAuthentication();
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
         {

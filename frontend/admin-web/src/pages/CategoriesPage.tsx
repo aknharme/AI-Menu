@@ -1,4 +1,7 @@
 import { FormEvent, useEffect, useState } from 'react';
+import EmptyState from '../components/EmptyState';
+import InlineAlert from '../components/InlineAlert';
+import LoadingState from '../components/LoadingState';
 import { useRestaurantContext } from '../hooks/useRestaurantContext';
 import {
   createCategory,
@@ -7,6 +10,7 @@ import {
   updateCategory,
 } from '../services/adminService';
 import type { AdminCategory, SaveAdminCategoryRequest } from '../types/admin';
+import { extractApiErrorMessage } from '../utils/apiError';
 
 type CategoryFormState = {
   name: string;
@@ -60,6 +64,10 @@ export default function CategoriesPage() {
       return 'Sıra alanı sayısal olmalıdır.';
     }
 
+    if (Number(form.displayOrder) < 0) {
+      return 'Sıra alanı negatif olamaz.';
+    }
+
     return null;
   }
 
@@ -92,7 +100,7 @@ export default function CategoriesPage() {
       resetForm();
       await loadCategories();
     } catch (submitError: any) {
-      setError(submitError?.response?.data?.message ?? 'Kategori kaydedilemedi.');
+      setError(extractApiErrorMessage(submitError, 'Kategori kaydedilemedi.'));
     } finally {
       setSaving(false);
     }
@@ -107,7 +115,7 @@ export default function CategoriesPage() {
       }
       await loadCategories();
     } catch (deleteError: any) {
-      setError(deleteError?.response?.data?.message ?? 'Kategori silinemedi.');
+      setError(extractApiErrorMessage(deleteError, 'Kategori silinemedi.'));
     }
   }
 
@@ -162,11 +170,7 @@ export default function CategoriesPage() {
             />
           </label>
 
-          {error && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-              {error}
-            </div>
-          )}
+          {error ? <InlineAlert message={error} /> : null}
 
           <div className="flex gap-3">
             <button
@@ -179,6 +183,7 @@ export default function CategoriesPage() {
             <button
               type="button"
               onClick={resetForm}
+              disabled={saving}
               className="rounded-full border border-stone-300 px-5 py-3 text-sm font-semibold text-stone-700"
             >
               Temizle
@@ -198,9 +203,13 @@ export default function CategoriesPage() {
         </div>
 
         {loading ? (
-          <p className="mt-5 text-sm text-stone-500">Kategoriler yükleniyor...</p>
+          <div className="mt-5">
+            <LoadingState count={3} />
+          </div>
         ) : categories.length === 0 ? (
-          <p className="mt-5 text-sm text-stone-500">Henüz kategori bulunmuyor.</p>
+          <div className="mt-5">
+            <EmptyState title="Kategori yok" description="Henuz kategori eklenmedi." />
+          </div>
         ) : (
           <div className="mt-5 space-y-3">
             {categories.map((category) => (

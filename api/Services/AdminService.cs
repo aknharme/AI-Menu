@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AiMenu.Api.Services;
 
-public class AdminService(IAdminRepository adminRepository) : IAdminService
+public class AdminService(IAdminRepository adminRepository, ILogService logService) : IAdminService
 {
     public async Task<IReadOnlyCollection<AdminCategoryDto>?> GetCategoriesAsync(Guid restaurantId, CancellationToken cancellationToken = default)
     {
@@ -37,6 +37,13 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
 
         await adminRepository.AddCategoryAsync(category, cancellationToken);
         await adminRepository.SaveChangesAsync(cancellationToken);
+        await logService.LogAuditAsync(
+            category.RestaurantId,
+            "CategoryCreated",
+            "Category",
+            category.CategoryId,
+            $"Kategori eklendi: {category.Name}",
+            cancellationToken);
 
         return MapCategory(category);
     }
@@ -49,11 +56,31 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
             return null;
         }
 
+        var previousIsActive = category.IsActive;
         category.Name = request.Name.Trim();
         category.DisplayOrder = request.DisplayOrder;
         category.IsActive = request.IsActive;
 
         await adminRepository.SaveChangesAsync(cancellationToken);
+        await logService.LogAuditAsync(
+            category.RestaurantId,
+            "CategoryUpdated",
+            "Category",
+            category.CategoryId,
+            $"Kategori guncellendi: {category.Name}",
+            cancellationToken);
+
+        if (previousIsActive != category.IsActive)
+        {
+            await logService.LogAuditAsync(
+                category.RestaurantId,
+                "CategoryStatusChanged",
+                "Category",
+                category.CategoryId,
+                $"Kategori durumu {(category.IsActive ? "aktif" : "pasif")} yapildi: {category.Name}",
+                cancellationToken);
+        }
+
         return MapCategory(category);
     }
 
@@ -70,8 +97,17 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
             throw new InvalidOperationException("Category has products. Move or delete products before removing this category.");
         }
 
+        var restaurantId = category.RestaurantId;
+        var categoryName = category.Name;
         await adminRepository.DeleteCategoryAsync(category, cancellationToken);
         await adminRepository.SaveChangesAsync(cancellationToken);
+        await logService.LogAuditAsync(
+            restaurantId,
+            "CategoryDeleted",
+            "Category",
+            categoryId,
+            $"Kategori silindi: {categoryName}",
+            cancellationToken);
         return true;
     }
 
@@ -118,6 +154,13 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
 
         await adminRepository.AddProductAsync(product, cancellationToken);
         await adminRepository.SaveChangesAsync(cancellationToken);
+        await logService.LogAuditAsync(
+            product.RestaurantId,
+            "ProductCreated",
+            "Product",
+            product.ProductId,
+            $"Urun eklendi: {product.Name}",
+            cancellationToken);
 
         var createdProduct = await adminRepository.GetProductAsync(product.ProductId, cancellationToken);
         return createdProduct is null ? null : MapProduct(createdProduct);
@@ -142,6 +185,7 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
             throw new InvalidOperationException("Category was not found for this restaurant.");
         }
 
+        var previousIsActive = product.IsActive;
         product.CategoryId = request.CategoryId;
         product.Name = request.Name.Trim();
         product.Price = request.Price;
@@ -150,6 +194,25 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
         product.IsActive = request.IsActive;
 
         await adminRepository.SaveChangesAsync(cancellationToken);
+        await logService.LogAuditAsync(
+            product.RestaurantId,
+            "ProductUpdated",
+            "Product",
+            product.ProductId,
+            $"Urun guncellendi: {product.Name}",
+            cancellationToken);
+
+        if (previousIsActive != product.IsActive)
+        {
+            await logService.LogAuditAsync(
+                product.RestaurantId,
+                "ProductStatusChanged",
+                "Product",
+                product.ProductId,
+                $"Urun durumu {(product.IsActive ? "aktif" : "pasif")} yapildi: {product.Name}",
+                cancellationToken);
+        }
+
         return MapProduct(product);
     }
 
@@ -168,8 +231,17 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
 
         try
         {
+            var restaurantId = product.RestaurantId;
+            var productName = product.Name;
             await adminRepository.DeleteProductAsync(product, cancellationToken);
             await adminRepository.SaveChangesAsync(cancellationToken);
+            await logService.LogAuditAsync(
+                restaurantId,
+                "ProductDeleted",
+                "Product",
+                productId,
+                $"Urun silindi: {productName}",
+                cancellationToken);
             return true;
         }
         catch (DbUpdateException)
@@ -207,6 +279,13 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
 
         await adminRepository.AddTableAsync(table, cancellationToken);
         await adminRepository.SaveChangesAsync(cancellationToken);
+        await logService.LogAuditAsync(
+            table.RestaurantId,
+            "TableCreated",
+            "Table",
+            table.TableId,
+            $"Masa eklendi: {table.Name}",
+            cancellationToken);
 
         return MapTable(table);
     }
@@ -219,11 +298,31 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
             return null;
         }
 
+        var previousIsActive = table.IsActive;
         table.Name = request.Name.Trim();
         table.IsActive = request.IsActive;
         table.QrCodeValue = BuildMenuUrl(table.RestaurantId, table.TableId);
 
         await adminRepository.SaveChangesAsync(cancellationToken);
+        await logService.LogAuditAsync(
+            table.RestaurantId,
+            "TableUpdated",
+            "Table",
+            table.TableId,
+            $"Masa guncellendi: {table.Name}",
+            cancellationToken);
+
+        if (previousIsActive != table.IsActive)
+        {
+            await logService.LogAuditAsync(
+                table.RestaurantId,
+                "TableStatusChanged",
+                "Table",
+                table.TableId,
+                $"Masa durumu {(table.IsActive ? "aktif" : "pasif")} yapildi: {table.Name}",
+                cancellationToken);
+        }
+
         return MapTable(table);
     }
 
@@ -242,8 +341,17 @@ public class AdminService(IAdminRepository adminRepository) : IAdminService
 
         try
         {
+            var restaurantId = table.RestaurantId;
+            var tableName = table.Name;
             await adminRepository.DeleteTableAsync(table, cancellationToken);
             await adminRepository.SaveChangesAsync(cancellationToken);
+            await logService.LogAuditAsync(
+                restaurantId,
+                "TableDeleted",
+                "Table",
+                tableId,
+                $"Masa silindi: {tableName}",
+                cancellationToken);
             return true;
         }
         catch (DbUpdateException)

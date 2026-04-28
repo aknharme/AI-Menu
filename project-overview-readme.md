@@ -49,8 +49,7 @@ Repo kokunde su ana alanlar bulunur:
 - `docs`
 - `infra`
 - `README.md`
-- `README-1.hafta.md`
-- `README-ozet.md`
+- `project-overview-readme.md`
 
 Bu yapi bize sunu soyler:
 
@@ -328,7 +327,7 @@ Burada:
 
 - `docker-compose.dev.yml`
 - `nginx/default.conf`
-- `infra/README.md`
+- `infra/infra-readme.md`
 
 bulunur.
 
@@ -416,6 +415,9 @@ Bu dosya hizli ozet icindir.
 Daha detayli okumak isteyen biri su dosyalara gecebilir:
 
 - [README.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/README.md)
-- [README-1.hafta.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/README-1.hafta.md)
-- [api/README.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/api/README.md)
-- [infra/README.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/infra/README.md)
+- [project-overview-readme.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/project-overview-readme.md)
+- [api/backend-readme.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/api/backend-readme.md)
+- [frontend/frontend-readme.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/frontend/frontend-readme.md)
+- [database-readme.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/database-readme.md)
+- [ai-readme.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/ai-readme.md)
+- [infra/infra-readme.md](/Users/emiryilmzl/Desktop/Projeler/AI-Menu/infra/infra-readme.md)

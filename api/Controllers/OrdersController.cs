@@ -1,3 +1,4 @@
+using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +24,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
         }
         catch (InvalidOperationException exception)
         {
-            return BadRequest(new ApiErrorResponseDto { Message = exception.Message });
+            return BadRequest(ApiErrorResponseDto.Create(exception.Message, ApiErrorCodes.BadRequest));
         }
     }
 
@@ -35,13 +36,13 @@ public class OrdersController(IOrderService orderService) : ControllerBase
     {
         if (orderId == Guid.Empty)
         {
-            return BadRequest(new ApiErrorResponseDto { Message = "Order id is required." });
+            return BadRequest(ApiErrorResponseDto.Create("Order id is required.", ApiErrorCodes.BadRequest));
         }
 
         var order = await orderService.GetOrderAsync(orderId, cancellationToken);
         if (order is null)
         {
-            return NotFound(new ApiErrorResponseDto { Message = "Order was not found." });
+            return NotFound(ApiErrorResponseDto.Create("Order was not found.", ApiErrorCodes.NotFound));
         }
 
         return Ok(order);

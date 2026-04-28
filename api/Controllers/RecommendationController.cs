@@ -1,3 +1,4 @@
+using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -19,13 +20,13 @@ public class RecommendationController(IRecommendationService recommendationServi
     {
         if (request.RestaurantId == Guid.Empty)
         {
-            return BadRequest(new { message = "Restaurant id is required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id is required.", ApiErrorCodes.BadRequest));
         }
 
         var response = await recommendationService.GetProductsByTagsAsync(request, cancellationToken);
         if (response is null)
         {
-            return NotFound(new { message = "Restaurant was not found or is inactive." });
+            return NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound));
         }
 
         return Ok(response);
@@ -41,7 +42,7 @@ public class RecommendationController(IRecommendationService recommendationServi
     {
         if (string.IsNullOrWhiteSpace(request.Prompt))
         {
-            return BadRequest(new { message = "Prompt is required." });
+            return BadRequest(ApiErrorResponseDto.Create("Prompt is required.", ApiErrorCodes.BadRequest));
         }
 
         return Ok(await recommendationService.GenerateTagsAsync(request, cancellationToken));
@@ -57,13 +58,13 @@ public class RecommendationController(IRecommendationService recommendationServi
     {
         if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Prompt))
         {
-            return BadRequest(new { message = "Restaurant id and prompt are required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id and prompt are required.", ApiErrorCodes.BadRequest));
         }
 
         var response = await recommendationService.GetProductsByPromptAsync(request, cancellationToken);
         if (response is null)
         {
-            return NotFound(new { message = "Restaurant was not found or is inactive." });
+            return NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound));
         }
 
         return Ok(response);

@@ -1,11 +1,15 @@
 import api from './api';
 import type {
   AdminCategory,
+  DashboardSummary,
   AdminProduct,
+  RecommendationStat,
+  RecentOrder,
   AdminTable,
   SaveAdminCategoryRequest,
   SaveAdminProductRequest,
   SaveAdminTableRequest,
+  TopProduct,
 } from '../types/admin';
 
 // Admin API service layer, tum kategori, urun ve masa CRUD isteklerini merkezden yonetir.
@@ -64,4 +68,35 @@ export async function updateTable(tableId: string, request: SaveAdminTableReques
 
 export async function deleteTable(tableId: string) {
   await api.delete(`/admin/tables/${tableId}`);
+}
+
+export async function getDashboard(restaurantId: string, date?: string) {
+  const response = await api.get<DashboardSummary>(`/admin/dashboard/${restaurantId}`, {
+    params: date ? { date } : undefined,
+  });
+  return response.data;
+}
+
+export async function getTopProducts(restaurantId: string, date?: string) {
+  const response = await api.get<TopProduct[]>(`/admin/stats/top-products/${restaurantId}`, {
+    params: date ? { date } : undefined,
+  });
+  return response.data;
+}
+
+export async function getRecommendationStats(restaurantId: string, date?: string) {
+  const response = await api.get<RecommendationStat[]>(
+    `/admin/stats/recommendations/${restaurantId}`,
+    {
+      params: date ? { date } : undefined,
+    },
+  );
+  return response.data;
+}
+
+export async function getRecentOrders(restaurantId: string, date?: string) {
+  const response = await api.get<RecentOrder[]>(`/admin/stats/recent-orders/${restaurantId}`, {
+    params: date ? { date } : undefined,
+  });
+  return response.data;
 }
