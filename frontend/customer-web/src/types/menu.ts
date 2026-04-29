@@ -5,6 +5,9 @@ export type ProductListItem = {
   name: string;
   description: string;
   price: number;
+  imageUrl?: string;
+  photoUrl?: string;
+  thumbnailUrl?: string;
   tags: string[];
 };
 
@@ -37,6 +40,9 @@ export type ProductDetail = {
   description: string;
   ingredients: string;
   price: number;
+  imageUrl?: string;
+  photoUrl?: string;
+  thumbnailUrl?: string;
   allergens: string[];
   tags: string[];
   variants: ProductVariant[];

@@ -98,8 +98,8 @@ export default function CartDrawer({
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-stone-950/55 p-0 sm:p-6">
-      <div className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[32px] bg-white shadow-2xl sm:rounded-[32px]">
-        <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+      <div className="flex max-h-[94dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]">
+        <div className="flex shrink-0 items-center justify-between border-b border-stone-200 px-4 py-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
               Sipariş Özeti
@@ -109,13 +109,13 @@ export default function CartDrawer({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-stone-200 px-3 py-2 text-sm text-stone-600"
+            className="shrink-0 rounded-full border border-stone-200 px-3 py-2 text-sm font-semibold text-stone-600"
           >
             Kapat
           </button>
         </div>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
           {!tableId && (
             <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               Sipariş gönderebilmek için masaya özel QR bağlantısından gelmen gerekiyor.
@@ -145,14 +145,16 @@ export default function CartDrawer({
               {cartItems.map((item) => (
                 <article
                   key={item.cartItemId}
-                  className="rounded-[28px] border border-stone-200 bg-white p-4 shadow-sm shadow-stone-950/5"
+                  className="rounded-[24px] border border-stone-200 bg-white p-4 shadow-sm shadow-stone-950/5"
                 >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                         {item.categoryName}
                       </p>
-                      <h3 className="mt-2 text-lg font-semibold text-stone-950">{item.productName}</h3>
+                      <h3 className="mt-2 line-clamp-2 text-base font-semibold leading-6 text-stone-950">
+                        {item.productName}
+                      </h3>
                       {item.variantName && (
                         <p className="mt-1 text-sm text-stone-500">Varyant: {item.variantName}</p>
                       )}
@@ -160,13 +162,13 @@ export default function CartDrawer({
                     <button
                       type="button"
                       onClick={() => removeFromCart(item.cartItemId)}
-                      className="text-sm font-medium text-rose-600"
+                      className="shrink-0 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600"
                     >
                       Çıkar
                     </button>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-4">
+                  <div className="mt-4 flex items-center justify-between gap-3">
                     <div className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 p-1">
                       <button
                         type="button"
@@ -198,7 +200,7 @@ export default function CartDrawer({
                       onChange={(event) => updateItemNote(item.cartItemId, event.target.value)}
                       maxLength={500}
                       rows={2}
-                      className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400 focus:bg-white"
+                      className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400 focus:bg-white"
                       placeholder="Örn. soğansız, az buzlu"
                     />
                   </label>
@@ -208,14 +210,14 @@ export default function CartDrawer({
           )}
 
           <section className="rounded-[28px] border border-stone-200 bg-stone-50 p-4">
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-4">
               <label className="block">
                 <span className="text-sm font-medium text-stone-700">Müşteri adı</span>
                 <input
                   value={customerName}
                   onChange={(event) => setCustomerName(event.target.value)}
                   maxLength={120}
-                  className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400"
+                  className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
                   placeholder="Opsiyonel"
                 />
               </label>
@@ -226,7 +228,7 @@ export default function CartDrawer({
                   value={orderNote}
                   onChange={(event) => setOrderNote(event.target.value)}
                   maxLength={500}
-                  className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400"
+                  className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
                   placeholder="Örn. önce içecekler gelsin"
                 />
               </label>
@@ -234,7 +236,7 @@ export default function CartDrawer({
           </section>
         </div>
 
-        <div className="border-t border-stone-200 bg-white px-5 py-4">
+        <div className="shrink-0 border-t border-stone-200 bg-white px-4 py-4">
           <div className="mb-4 flex items-center justify-between text-sm">
             <span className="text-stone-500">Toplam</span>
             <span className="text-lg font-semibold text-stone-950">{formatPrice(totalPrice)}</span>
