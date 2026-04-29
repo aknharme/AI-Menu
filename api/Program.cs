@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
 
 var contentRoot = Directory.GetCurrentDirectory();
@@ -71,6 +72,29 @@ var host = new WebHostBuilder()
         services.AddSwaggerGen(options =>
         {
             options.SchemaFilter<MenuSchemaExampleFilter>();
+            options.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = JwtBearerDefaults.AuthenticationScheme,
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "JWT token girin. Ornek: Bearer eyJhbGciOi..."
+            });
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = JwtBearerDefaults.AuthenticationScheme
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
         });
 
         // MVP asamasinda frontend gelistirmesini bloklamamak icin tum origin'lere izin veriyoruz.
