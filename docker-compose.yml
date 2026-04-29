@@ -25,13 +25,15 @@ services:
       - "${OLLAMA_PORT:-11434}:11434"
     volumes:
       - ollama-data:/root/.ollama
-    entrypoint: ["/bin/sh", "-c"]
-    command: >
-      ollama serve &
-      server_pid=$$!;
-      sleep 5;
-      ollama pull ${OLLAMA_MODEL:-qwen2.5:3b};
-      wait $$server_pid
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        ollama serve &
+        server_pid=$$!
+        sleep 5
+        ollama pull ${OLLAMA_MODEL:-qwen2.5:3b}
+        wait $$server_pid
     healthcheck:
       test: ["CMD", "ollama", "list"]
       interval: 15s
