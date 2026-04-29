@@ -16,7 +16,7 @@ export default function CategoryTabs({
   }
 
   return (
-    <div className="sticky top-[73px] z-10 -mx-4 overflow-x-auto border-y border-stone-200 bg-white/90 px-4 py-3 backdrop-blur">
+    <div className="-mx-4 overflow-x-auto border-y border-stone-100 bg-white px-4 py-2.5">
       <div className="flex min-w-max gap-2">
         {categories.map((category) => {
           const isActive = category.categoryId === activeCategoryId;
@@ -27,13 +27,21 @@ export default function CategoryTabs({
               type="button"
               onClick={() => onSelect(category.categoryId)}
               className={[
-                'rounded-full border px-4 py-2 text-sm font-medium transition',
+                'rounded-full border px-4 py-2 text-sm font-semibold transition',
                 isActive
-                  ? 'border-amber-500 bg-amber-500 text-stone-950 shadow-sm'
-                  : 'border-stone-200 bg-stone-50 text-stone-600 hover:border-stone-300 hover:bg-stone-100',
+                  ? 'border-stone-700 bg-stone-700 text-white shadow-sm shadow-stone-950/10 hover:bg-stone-700'
+                  : 'border-stone-200 bg-white text-stone-600 hover:border-stone-400 hover:bg-stone-50',
               ].join(' ')}
             >
-              {category.name}
+              <span>{category.name}</span>
+              <span
+                className={[
+                  'ml-2 rounded-full px-2 py-0.5 text-[11px]',
+                  isActive ? 'bg-white/15 text-white' : 'bg-stone-100 text-stone-500',
+                ].join(' ')}
+              >
+                {category.products.length}
+              </span>
             </button>
           );
         })}
