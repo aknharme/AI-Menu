@@ -14,4 +14,6 @@ public class Order
     public Restaurant Restaurant { get; set; } = null!;
     public Table Table { get; set; } = null!;
     public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+    // Siparisin durum gecmisi ayri log tablosunda korunur.
+    public ICollection<OrderStatusLog> StatusLogs { get; set; } = new List<OrderStatusLog>();
 }

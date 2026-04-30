@@ -88,4 +88,15 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
                 .ThenInclude(x => x.ProductVariant)
             .FirstOrDefaultAsync(cancellationToken);
     }
+
+    public async Task<Order?> GetOrderForUpdateAsync(Guid restaurantId, Guid orderId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Orders
+            .FirstOrDefaultAsync(order => order.RestaurantId == restaurantId && order.OrderId == orderId, cancellationToken);
+    }
+
+    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await dbContext.SaveChangesAsync(cancellationToken);
+    }
 }

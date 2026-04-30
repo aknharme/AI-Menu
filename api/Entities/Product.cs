@@ -1,6 +1,6 @@
 namespace AiMenu.Api.Entities;
 
-// Product, menude satilan urunu temsil eder; AI tarafinda kullanilacak tag listesi de burada tutulur.
+// Product, menude satilan urunu temsil eder; AI tarafinda kullanilacak tag iliskisi join tablo uzerinden kurulur.
 public class Product
 {
     public Guid ProductId { get; set; }
@@ -15,9 +15,10 @@ public class Product
 
     public Restaurant Restaurant { get; set; } = null!;
     public Category Category { get; set; } = null!;
-    // Varyant, alerjen ve tag bilgileri ürün detay response'unu besler.
+    // Varyant, alerjen ve tag bilgileri urun detay response'unu besler.
     public ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
     public ICollection<ProductAllergen> Allergens { get; set; } = new List<ProductAllergen>();
-    public ICollection<ProductTag> Tags { get; set; } = new List<ProductTag>();
+    // ProductTags, ayri Tags sozlugu ile urun arasindaki coktan coga iliskiyi tasir.
+    public ICollection<ProductTag> ProductTags { get; set; } = new List<ProductTag>();
     public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }

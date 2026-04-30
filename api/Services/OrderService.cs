@@ -6,7 +6,7 @@ using AiMenu.Api.Services.Interfaces;
 namespace AiMenu.Api.Services;
 
 // Siparis olusturma akisinin business rule katmani burada bulunur.
-public class OrderService(IOrderRepository orderRepository) : IOrderService
+public class OrderService(IOrderRepository orderRepository, ILogService logService) : IOrderService
 {
     public async Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto request, CancellationToken cancellationToken = default)
     {
@@ -110,6 +110,13 @@ public class OrderService(IOrderRepository orderRepository) : IOrderService
         order.TotalAmount = order.Items.Sum(x => x.LineTotal);
 
         var createdOrder = await orderRepository.AddOrderAsync(order, cancellationToken);
+        await logService.LogOrderStatusAsync(
+            createdOrder.RestaurantId,
+            createdOrder.OrderId,
+            null,
+            createdOrder.Status,
+            null,
+            cancellationToken);
 
         // Response DTO, entity'yi dis dunyaya birebir acmadan API cevabi uretir.
         return MapOrder(createdOrder, productMap, variantMap);

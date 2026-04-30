@@ -1,208 +1,281 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import EmptyState from '../components/EmptyState';
+import InlineAlert from '../components/InlineAlert';
 import LoadingState from '../components/LoadingState';
-import QrPreviewModal from '../components/QrPreviewModal';
-import TableFormModal from '../components/TableFormModal';
-import { useRestaurantId } from '../hooks/useRestaurantId';
-import { useTableManagement } from '../hooks/useTableManagement';
-import type { AdminTable } from '../types/table';
+import { QRCodeSVG } from 'qrcode.react';
+import { useRestaurantContext } from '../hooks/useRestaurantContext';
+import {
+  createTable,
+  deleteTable,
+  getTables,
+  updateTable,
+} from '../services/adminService';
+import type { AdminTable, SaveAdminTableRequest } from '../types/admin';
+import { extractApiErrorMessage } from '../utils/apiError';
 
-function buildDownload(table: AdminTable) {
-  const element = document.getElementById(`table-qr-${table.tableId}`);
-  const svg = element?.querySelector('svg');
+type TableFormState = {
+  name: string;
+  isActive: boolean;
+};
 
-  if (!svg) {
-    return;
+const initialFormState: TableFormState = {
+  name: '',
+  isActive: true,
+};
+
+// TablesPage, masa CRUD ve QR gosterme-indirme deneyimini admin panelde sunar.
+export default function TablesPage() {
+  const { restaurantId, customerBaseUrl } = useRestaurantContext();
+  const [tables, setTables] = useState<AdminTable[]>([]);
+  const [form, setForm] = useState<TableFormState>(initialFormState);
+  const [editingTableId, setEditingTableId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const svgRefs = useRef<Record<string, SVGSVGElement | null>>({});
+
+  useEffect(() => {
+    void loadTables();
+  }, [restaurantId]);
+
+  async function loadTables() {
+    try {
+      setLoading(true);
+      setError(null);
+      setTables(await getTables(restaurantId));
+    } catch {
+      setError('Masalar yüklenemedi.');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const serializer = new XMLSerializer();
-  const svgContent = serializer.serializeToString(svg);
-  const blob = new Blob([svgContent], { type: 'image/svg+xml;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${table.name.toLowerCase().replace(/\s+/g, '-')}-qr.svg`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-}
+  const customerOrigin = useMemo(() => customerBaseUrl.replace(/\/$/, ''), [customerBaseUrl]);
 
-export default function TablesPage() {
-  const restaurantId = useRestaurantId();
-  const { tables, loading, error, createTable, updateTable, deleteTable } = useTableManagement({
-    restaurantId,
-  });
-  const [modalOpen, setModalOpen] = useState(false);
-  const [previewTable, setPreviewTable] = useState<AdminTable | null>(null);
-  const [editingTable, setEditingTable] = useState<AdminTable | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  function resetForm() {
+    setForm(initialFormState);
+    setEditingTableId(null);
+  }
 
-  function handleCloseModal() {
-    setModalOpen(false);
-    setEditingTable(null);
+  function validateForm() {
+    if (!form.name.trim()) {
+      return 'Masa adı boş olamaz.';
+    }
+
+    return null;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    const validationError = validateForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    const request: SaveAdminTableRequest = {
+      restaurantId,
+      name: form.name.trim(),
+      isActive: form.isActive,
+    };
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      if (editingTableId) {
+        await updateTable(editingTableId, request);
+      } else {
+        await createTable(request);
+      }
+
+      resetForm();
+      await loadTables();
+    } catch (submitError: any) {
+      setError(extractApiErrorMessage(submitError, 'Masa kaydedilemedi.'));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handleDelete(tableId: string) {
     try {
-      setActionError(null);
+      setError(null);
       await deleteTable(tableId);
-    } catch {
-      setActionError('Bu masa daha once sipariste kullanildigi icin silinemedi.');
+      if (editingTableId === tableId) {
+        resetForm();
+      }
+      await loadTables();
+    } catch (deleteError: any) {
+      setError(extractApiErrorMessage(deleteError, 'Masa silinemedi.'));
     }
   }
 
+  function handleEdit(table: AdminTable) {
+    // Secilen masa forma aktarilarak hizli guncelleme saglanir.
+    setEditingTableId(table.tableId);
+    setForm({
+      name: table.name,
+      isActive: table.isActive,
+    });
+  }
+
+  function getFullMenuUrl(menuUrl: string) {
+    return `${customerOrigin}${menuUrl}`;
+  }
+
+  function handleDownloadQr(table: AdminTable) {
+    const svgElement = svgRefs.current[table.tableId];
+    if (!svgElement) {
+      return;
+    }
+
+    // SVG tabanli QR kodu indirmek icin data url olusturulur.
+    const serializer = new XMLSerializer();
+    const svgMarkup = serializer.serializeToString(svgElement);
+    const blob = new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${table.name.replace(/\s+/g, '-').toLowerCase()}-qr.svg`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
-    <div className="space-y-6">
-      <section className="overflow-hidden rounded-[32px] border border-stone-200 bg-[linear-gradient(135deg,_#111827_0%,_#292524_55%,_#f59e0b_180%)] p-6 text-white shadow-lg shadow-stone-950/10">
-        <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-200/90">
-              Masa ve QR
-            </p>
-            <h2 className="mt-2 text-3xl font-semibold">Masa Yonetimi</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-stone-200">
-              Her masa icin restoran ve masa kimligini tasiyan ozel bir menu URL&apos;si uret,
-              QR kodu indir ve fiziksel masaya yerlestir.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-stone-300">Restoran</p>
-              <p className="mt-2 break-all text-sm font-semibold">{restaurantId || 'Belirtilmedi'}</p>
-            </div>
-            <div className="rounded-2xl bg-white/10 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-stone-300">Toplam Masa</p>
-              <p className="mt-2 text-2xl font-semibold">{tables.length}</p>
-            </div>
-          </div>
+    <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+      <section className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm shadow-stone-950/5">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700">
+            Masa Formu
+          </p>
+          <h2 className="text-xl font-semibold text-stone-950">
+            {editingTableId ? 'Masa Düzenle' : 'Yeni Masa'}
+          </h2>
         </div>
+
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-stone-700">Masa adı</span>
+            <input
+              value={form.name}
+              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            />
+          </label>
+
+          <label className="flex items-center justify-between rounded-2xl border border-stone-200 px-4 py-3">
+            <span className="text-sm font-medium text-stone-700">Aktif / Pasif</span>
+            <input
+              type="checkbox"
+              checked={form.isActive}
+              onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
+              className="h-4 w-4 accent-amber-600"
+            />
+          </label>
+
+          {error ? <InlineAlert message={error} /> : null}
+
+          <div className="flex gap-3">
+            <button
+              type="submit"
+              disabled={saving}
+              className="rounded-full bg-stone-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-70"
+            >
+              {saving ? 'Kaydediliyor...' : editingTableId ? 'Güncelle' : 'Ekle'}
+            </button>
+            <button
+              type="button"
+              onClick={resetForm}
+              disabled={saving}
+              className="rounded-full border border-stone-300 px-5 py-3 text-sm font-semibold text-stone-700"
+            >
+              Temizle
+            </button>
+          </div>
+        </form>
       </section>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-500">
-            Admin Ekranlari
+      <section className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm shadow-stone-950/5">
+        <div className="space-y-1">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
+            Masa Listesi
           </p>
-          <h3 className="mt-2 text-2xl font-semibold text-stone-950">Masalar</h3>
+          <h2 className="text-xl font-semibold text-stone-950">{tables.length} masa</h2>
         </div>
-        <div className="flex gap-3">
-          <Link
-            to={`/?restaurantId=${restaurantId}`}
-            className="rounded-2xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700"
-          >
-            Kataloga Don
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setEditingTable(null);
-              setModalOpen(true);
-            }}
-            className="rounded-2xl bg-stone-950 px-4 py-2 text-sm font-semibold text-white"
-          >
-            Masa Ekle
-          </button>
-        </div>
-      </div>
 
-      {actionError && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-          {actionError}
-        </div>
-      )}
-
-      {loading ? (
-        <LoadingState count={4} />
-      ) : error ? (
-        <EmptyState title="Masalar yuklenemedi" description={error} />
-      ) : tables.length === 0 ? (
-        <EmptyState
-          title="Henuz masa yok"
-          description="Ilk masayi ekledikten sonra sistem her masa icin benzersiz QR URL'si uretecek."
-        />
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          {tables.map((table) => (
-            <article
-              key={table.tableId}
-              className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm shadow-stone-950/5"
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
-                    Table
-                  </p>
-                  <h4 className="mt-2 text-xl font-semibold text-stone-950">{table.name}</h4>
-                  <p className="mt-2 break-all text-sm text-stone-500">{table.menuUrl}</p>
-                </div>
-                <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-700">
-                  {table.isActive ? 'Aktif' : 'Pasif'}
-                </span>
-              </div>
-
-              <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div
-                  id={`table-qr-${table.tableId}`}
-                  className="inline-flex rounded-[24px] border border-stone-200 bg-stone-50 p-3"
-                >
-                  <QRCodeSVG value={table.qrCodeValue} size={112} includeMargin />
+        {loading ? (
+          <div className="mt-5">
+            <LoadingState count={4} />
+          </div>
+        ) : tables.length === 0 ? (
+          <div className="mt-5">
+            <EmptyState title="Masa yok" description="Henuz masa eklenmedi." />
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            {tables.map((table) => (
+              <article
+                key={table.tableId}
+                className="rounded-[24px] border border-stone-200 bg-stone-50 px-4 py-4"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-semibold text-stone-950">{table.name}</h3>
+                    <p className="mt-1 break-all text-sm leading-6 text-stone-500">
+                      {getFullMenuUrl(table.menuUrl)}
+                    </p>
+                  </div>
+                  <span
+                    className={[
+                      'rounded-full px-3 py-1 text-xs font-semibold',
+                      table.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600',
+                    ].join(' ')}
+                  >
+                    {table.isActive ? 'Aktif' : 'Pasif'}
+                  </span>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setPreviewTable(table)}
-                    className="rounded-2xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700"
-                  >
-                    QR Goster
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => buildDownload(table)}
-                    className="rounded-2xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700"
-                  >
-                    QR Indir
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditingTable(table);
-                      setModalOpen(true);
+                <div className="mt-4 flex justify-center rounded-[24px] border border-dashed border-stone-300 bg-white p-4">
+                  <QRCodeSVG
+                    value={getFullMenuUrl(table.menuUrl)}
+                    size={172}
+                    includeMargin
+                    ref={(element) => {
+                      svgRefs.current[table.tableId] = element;
                     }}
-                    className="rounded-2xl border border-stone-200 px-4 py-2 text-sm font-medium text-stone-700"
+                  />
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => handleEdit(table)}
+                    className="rounded-full border border-stone-300 px-4 py-2 text-sm font-medium text-stone-700"
                   >
-                    Duzenle
+                    Düzenle
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDownloadQr(table)}
+                    className="rounded-full border border-amber-300 px-4 py-2 text-sm font-medium text-amber-700"
+                  >
+                    QR İndir
                   </button>
                   <button
                     type="button"
                     onClick={() => void handleDelete(table.tableId)}
-                    className="rounded-2xl border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700"
+                    className="rounded-full border border-rose-300 px-4 py-2 text-sm font-medium text-rose-700"
                   >
                     Sil
                   </button>
                 </div>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-
-      <TableFormModal
-        isOpen={modalOpen}
-        restaurantId={restaurantId}
-        initialValue={editingTable}
-        onClose={handleCloseModal}
-        onSubmit={(values) =>
-          editingTable
-            ? updateTable(editingTable.tableId, values)
-            : createTable(values)
-        }
-      />
-
-      <QrPreviewModal table={previewTable} onClose={() => setPreviewTable(null)} />
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

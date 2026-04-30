@@ -1,5 +1,6 @@
 namespace AiMenu.Api.DTOs;
 
+// AdminProductDto, admin panelde urun listeleme ve duzenleme icin gerekli alanlari dondurur.
 public class AdminProductDto
 {
     public Guid ProductId { get; set; }
@@ -10,5 +11,6 @@ public class AdminProductDto
     public decimal Price { get; set; }
     public string Description { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
+    public IReadOnlyCollection<string> Tags { get; set; } = Array.Empty<string>();
     public bool IsActive { get; set; }
 }

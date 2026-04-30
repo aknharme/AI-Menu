@@ -1,3 +1,4 @@
+using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -18,13 +19,13 @@ public class MenuController(IMenuService menuService) : ControllerBase
     {
         if (restaurantId == Guid.Empty)
         {
-            return BadRequest(new { message = "Restaurant id is required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id is required.", ApiErrorCodes.BadRequest));
         }
 
         var menu = await menuService.GetMenuAsync(restaurantId, cancellationToken);
         if (menu is null)
         {
-            return NotFound(new { message = "Restaurant was not found or is inactive." });
+            return NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound));
         }
 
         return Ok(menu);
@@ -39,13 +40,13 @@ public class MenuController(IMenuService menuService) : ControllerBase
     {
         if (restaurantId == Guid.Empty)
         {
-            return BadRequest(new { message = "Restaurant id is required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id is required.", ApiErrorCodes.BadRequest));
         }
 
         var categories = await menuService.GetCategoriesAsync(restaurantId, cancellationToken);
         if (categories is null)
         {
-            return NotFound(new { message = "Restaurant was not found or is inactive." });
+            return NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound));
         }
 
         return Ok(categories);
@@ -60,13 +61,13 @@ public class MenuController(IMenuService menuService) : ControllerBase
     {
         if (restaurantId == Guid.Empty)
         {
-            return BadRequest(new { message = "Restaurant id is required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id is required.", ApiErrorCodes.BadRequest));
         }
 
         var products = await menuService.GetProductsAsync(restaurantId, cancellationToken);
         if (products is null)
         {
-            return NotFound(new { message = "Restaurant was not found or is inactive." });
+            return NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound));
         }
 
         return Ok(products);
@@ -81,13 +82,13 @@ public class MenuController(IMenuService menuService) : ControllerBase
     {
         if (restaurantId == Guid.Empty || productId == Guid.Empty)
         {
-            return BadRequest(new { message = "Restaurant id and product id are required." });
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id and product id are required.", ApiErrorCodes.BadRequest));
         }
 
         var product = await menuService.GetProductAsync(restaurantId, productId, cancellationToken);
         if (product is null)
         {
-            return NotFound(new { message = "Product was not found in this restaurant menu or is inactive." });
+            return NotFound(ApiErrorResponseDto.Create("Product was not found in this restaurant menu or is inactive.", ApiErrorCodes.NotFound));
         }
 
         return Ok(product);

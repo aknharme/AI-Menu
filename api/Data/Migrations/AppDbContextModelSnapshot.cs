@@ -22,6 +22,48 @@ namespace AiMenu.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("AiMenu.Api.Entities.AuditLog", b =>
+                {
+                    b.Property<Guid>("AuditLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("AuditLogId");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("RestaurantId", "CreatedAtUtc");
+
+                    b.ToTable("AuditLogs");
+                });
+
             modelBuilder.Entity("AiMenu.Api.Entities.Category", b =>
                 {
                     b.Property<Guid>("CategoryId")
@@ -102,13 +144,13 @@ namespace AiMenu.Api.Data.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Note")
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
@@ -137,6 +179,44 @@ namespace AiMenu.Api.Data.Migrations
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("OrderItems");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.OrderStatusLog", b =>
+                {
+                    b.Property<Guid>("OrderStatusLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("ChangedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ChangedByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("NewStatus")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("OldStatus")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("OrderStatusLogId");
+
+                    b.HasIndex("ChangedByUserId");
+
+                    b.HasIndex("OrderId", "ChangedAtUtc");
+
+                    b.HasIndex("RestaurantId", "ChangedAtUtc");
+
+                    b.ToTable("OrderStatusLogs");
                 });
 
             modelBuilder.Entity("AiMenu.Api.Entities.Product", b =>
@@ -177,7 +257,7 @@ namespace AiMenu.Api.Data.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.HasIndex("RestaurantId");
+                    b.HasIndex("RestaurantId", "IsActive");
 
                     b.ToTable("Products");
                 });
@@ -214,22 +294,23 @@ namespace AiMenu.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(80)
-                        .HasColumnType("character varying(80)");
-
                     b.Property<Guid>("ProductId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("RestaurantId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid>("TagId")
+                        .HasColumnType("uuid");
+
                     b.HasKey("ProductTagId");
 
-                    b.HasIndex("ProductId");
+                    b.HasIndex("TagId");
 
-                    b.HasIndex("RestaurantId");
+                    b.HasIndex("ProductId", "TagId")
+                        .IsUnique();
+
+                    b.HasIndex("RestaurantId", "TagId");
 
                     b.ToTable("ProductTags");
                 });
@@ -265,6 +346,38 @@ namespace AiMenu.Api.Data.Migrations
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("ProductVariants");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.RecommendationLog", b =>
+                {
+                    b.Property<Guid>("RecommendationLogId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ExtractedTags")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Prompt")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("RecommendedProducts")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("RecommendationLogId");
+
+                    b.HasIndex("RestaurantId", "CreatedAtUtc");
+
+                    b.ToTable("RecommendationLogs");
                 });
 
             modelBuilder.Entity("AiMenu.Api.Entities.Restaurant", b =>
@@ -321,6 +434,96 @@ namespace AiMenu.Api.Data.Migrations
                     b.HasIndex("RestaurantId");
 
                     b.ToTable("Tables");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.Tag", b =>
+                {
+                    b.Property<Guid>("TagId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<string>("NormalizedName")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("TagId");
+
+                    b.HasIndex("RestaurantId", "NormalizedName")
+                        .IsUnique();
+
+                    b.ToTable("Tags");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.User", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("RestaurantId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.HasKey("UserId");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("RestaurantId", "Role");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.AuditLog", b =>
+                {
+                    b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AiMenu.Api.Entities.User", "User")
+                        .WithMany("AuditLogs")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Restaurant");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("AiMenu.Api.Entities.Category", b =>
@@ -387,6 +590,32 @@ namespace AiMenu.Api.Data.Migrations
                     b.Navigation("Restaurant");
                 });
 
+            modelBuilder.Entity("AiMenu.Api.Entities.OrderStatusLog", b =>
+                {
+                    b.HasOne("AiMenu.Api.Entities.User", "ChangedByUser")
+                        .WithMany("OrderStatusLogs")
+                        .HasForeignKey("ChangedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("AiMenu.Api.Entities.Order", "Order")
+                        .WithMany("StatusLogs")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
+                        .WithMany("OrderStatusLogs")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ChangedByUser");
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Restaurant");
+                });
+
             modelBuilder.Entity("AiMenu.Api.Entities.Product", b =>
                 {
                     b.HasOne("AiMenu.Api.Entities.Category", "Category")
@@ -428,7 +657,7 @@ namespace AiMenu.Api.Data.Migrations
             modelBuilder.Entity("AiMenu.Api.Entities.ProductTag", b =>
                 {
                     b.HasOne("AiMenu.Api.Entities.Product", "Product")
-                        .WithMany("Tags")
+                        .WithMany("ProductTags")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -439,9 +668,17 @@ namespace AiMenu.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("AiMenu.Api.Entities.Tag", "Tag")
+                        .WithMany("ProductTags")
+                        .HasForeignKey("TagId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Product");
 
                     b.Navigation("Restaurant");
+
+                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("AiMenu.Api.Entities.ProductVariant", b =>
@@ -463,10 +700,43 @@ namespace AiMenu.Api.Data.Migrations
                     b.Navigation("Restaurant");
                 });
 
+            modelBuilder.Entity("AiMenu.Api.Entities.RecommendationLog", b =>
+                {
+                    b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
+                        .WithMany("RecommendationLogs")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Restaurant");
+                });
+
             modelBuilder.Entity("AiMenu.Api.Entities.Table", b =>
                 {
                     b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
                         .WithMany("Tables")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.Tag", b =>
+                {
+                    b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
+                        .WithMany("Tags")
+                        .HasForeignKey("RestaurantId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Restaurant");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.User", b =>
+                {
+                    b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
+                        .WithMany("Users")
                         .HasForeignKey("RestaurantId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -482,6 +752,8 @@ namespace AiMenu.Api.Data.Migrations
             modelBuilder.Entity("AiMenu.Api.Entities.Order", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("StatusLogs");
                 });
 
             modelBuilder.Entity("AiMenu.Api.Entities.Product", b =>
@@ -490,16 +762,25 @@ namespace AiMenu.Api.Data.Migrations
 
                     b.Navigation("OrderItems");
 
-                    b.Navigation("Tags");
+                    b.Navigation("ProductTags");
 
                     b.Navigation("Variants");
                 });
 
+            modelBuilder.Entity("AiMenu.Api.Entities.ProductVariant", b =>
+                {
+                    b.Navigation("OrderItems");
+                });
+
             modelBuilder.Entity("AiMenu.Api.Entities.Restaurant", b =>
                 {
+                    b.Navigation("AuditLogs");
+
                     b.Navigation("Categories");
 
                     b.Navigation("OrderItems");
+
+                    b.Navigation("OrderStatusLogs");
 
                     b.Navigation("Orders");
 
@@ -511,7 +792,13 @@ namespace AiMenu.Api.Data.Migrations
 
                     b.Navigation("Products");
 
+                    b.Navigation("RecommendationLogs");
+
                     b.Navigation("Tables");
+
+                    b.Navigation("Tags");
+
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("AiMenu.Api.Entities.Table", b =>
@@ -519,9 +806,16 @@ namespace AiMenu.Api.Data.Migrations
                     b.Navigation("Orders");
                 });
 
-            modelBuilder.Entity("AiMenu.Api.Entities.ProductVariant", b =>
+            modelBuilder.Entity("AiMenu.Api.Entities.Tag", b =>
                 {
-                    b.Navigation("OrderItems");
+                    b.Navigation("ProductTags");
+                });
+
+            modelBuilder.Entity("AiMenu.Api.Entities.User", b =>
+                {
+                    b.Navigation("AuditLogs");
+
+                    b.Navigation("OrderStatusLogs");
                 });
 #pragma warning restore 612, 618
         }

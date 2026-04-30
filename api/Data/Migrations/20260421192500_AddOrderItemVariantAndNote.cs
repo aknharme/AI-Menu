@@ -1,10 +1,14 @@
 using System;
+using AiMenu.Api.Data;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
 namespace AiMenu.Api.Data.Migrations
 {
+    [DbContext(typeof(AppDbContext))]
+    [Migration("20260421192500_AddOrderItemVariantAndNote")]
     public partial class AddOrderItemVariantAndNote : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)

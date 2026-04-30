@@ -203,24 +203,6 @@ export default function ProductDetailDrawer({
                 )}
               </section>
 
-              {detail.tags.length > 0 && (
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
-                    Etiketler
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {detail.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-              )}
-
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
                   Siparis Tercihi
@@ -241,7 +223,7 @@ export default function ProductDetailDrawer({
                     </span>
                     <button
                       type="button"
-                      onClick={() => setQuantity((current) => current + 1)}
+                      onClick={() => setQuantity((current) => Math.min(99, current + 1))}
                       className="rounded-full px-3 py-1.5 text-sm text-stone-700"
                     >
                       +
@@ -254,6 +236,7 @@ export default function ProductDetailDrawer({
                   <textarea
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
+                    maxLength={500}
                     rows={3}
                     className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400 focus:bg-white"
                     placeholder="Orn. az buzlu, sogansiz, ekstra sos"

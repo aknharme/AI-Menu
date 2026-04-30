@@ -1,5 +1,6 @@
 namespace AiMenu.Api.DTOs;
 
+// AdminCategoryDto, admin panelin kategori listesi ve formu icin gereken alanlari tasir.
 public class AdminCategoryDto
 {
     public Guid CategoryId { get; set; }
@@ -7,5 +8,4 @@ public class AdminCategoryDto
     public string Name { get; set; } = string.Empty;
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
-    public int ProductCount { get; set; }
 }

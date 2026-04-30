@@ -12,4 +12,10 @@ public interface ICashierService
         Guid restaurantId,
         Guid orderId,
         CancellationToken cancellationToken = default);
+
+    Task<CashierOrderDetailDto?> UpdateOrderStatusAsync(
+        Guid restaurantId,
+        Guid orderId,
+        string status,
+        CancellationToken cancellationToken = default);
 }
