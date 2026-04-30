@@ -107,6 +107,10 @@ export default function CustomerLayout() {
   function handleCartPointerUp(event: PointerEvent<HTMLDivElement>) {
     const dragState = dragStateRef.current;
     if (dragState.pointerId === event.pointerId) {
+      if (!dragState.hasMoved) {
+        setIsCartOpen(true);
+      }
+
       suppressClickRef.current = dragState.hasMoved;
       dragStateRef.current.isDragging = false;
     }

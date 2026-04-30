@@ -8,4 +8,5 @@ public class AdminTableDto
     public string Name { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public string MenuUrl { get; set; } = string.Empty;
+    public string QrCodeValue { get; set; } = string.Empty;
 }

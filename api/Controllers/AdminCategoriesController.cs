@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace AiMenu.Api.Controllers;
 
 [ApiController]
-[Route("api/admin/categories")]
+[Route("api/admin/catalog/categories")]
 public class AdminCategoriesController(IAdminCatalogService adminCatalogService) : ControllerBase
 {
     [HttpGet("{restaurantId:guid}")]

@@ -67,7 +67,13 @@ type MenuGroupView = {
 };
 
 function normalizeMenuText(value: string) {
-  return value.toLocaleLowerCase('tr-TR');
+  return value
+    .toLocaleLowerCase('tr-TR')
+    // Turkce buyuk I harfi locale ile "ı" oldugu icin anahtar kelime eslesmesinde ASCII tabanli normalize edilir.
+    .replace(/ı/g, 'i')
+    .replace(/İ/g, 'i')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
 }
 
 function getCategoryGroupId(categoryName: string) {

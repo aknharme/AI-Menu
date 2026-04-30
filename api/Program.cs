@@ -180,6 +180,7 @@ var host = new WebHostBuilder()
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IAdminRepository, AdminRepository>();
+        services.AddScoped<IAdminCatalogRepository, AdminCatalogRepository>();
         services.AddScoped<ILogRepository, LogRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IRecommendationRepository, RecommendationRepository>();
@@ -187,6 +188,7 @@ var host = new WebHostBuilder()
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IAdminCatalogService, AdminCatalogService>();
         services.AddScoped<IAdminStatsService, AdminStatsService>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
