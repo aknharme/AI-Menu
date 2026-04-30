@@ -10,6 +10,7 @@ import type {
   SaveAdminProductRequest,
   SaveAdminTableRequest,
   TopProduct,
+  AdminAiTestResponse,
 } from '../types/admin';
 
 // Admin API service layer, tum kategori, urun ve masa CRUD isteklerini merkezden yonetir.
@@ -98,5 +99,14 @@ export async function getRecentOrders(restaurantId: string, date?: string) {
   const response = await api.get<RecentOrder[]>(`/admin/stats/recent-orders/${restaurantId}`, {
     params: date ? { date } : undefined,
   });
+  return response.data;
+}
+
+export async function testAiGrounding(restaurantId: string, message: string) {
+  const response = await api.post<AdminAiTestResponse>('/admin/ai/test', {
+    restaurantId,
+    message,
+  });
+
   return response.data;
 }

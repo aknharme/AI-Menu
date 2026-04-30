@@ -12,11 +12,33 @@ export async function getProductDetail(restaurantId: string, productId: string) 
 }
 
 export async function getRecommendationsByPrompt(restaurantId: string, prompt: string) {
-  // Prompt once backend AI akisina gider, sonra ayni istek icinde urun filtrelemesi tamamlanir.
-  const response = await api.post<RecommendationResponse>('/recommendation/prompt', {
+  const response = await api.post<{
+    intent: string;
+    reply: string;
+    suggestedProducts: Array<{
+      id?: string;
+      productId?: string;
+      name: string;
+      price: number;
+      description: string;
+    }>;
+  }>('/ai/message', {
     restaurantId,
-    prompt,
+    message: prompt,
   });
 
-  return response.data;
+  return {
+    restaurantId,
+    tags: [],
+    isFallback: false,
+    message: response.data.reply,
+    products: response.data.suggestedProducts
+      .map((product) => ({
+        productId: product.id ?? product.productId ?? '',
+        name: product.name,
+        price: product.price,
+        description: product.description,
+      }))
+      .filter((product) => product.productId),
+  } satisfies RecommendationResponse;
 }

@@ -153,6 +153,7 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
         };
 
         await adminRepository.AddProductAsync(product, cancellationToken);
+        await SyncProductTagsAsync(product, request.Tags, cancellationToken);
         await adminRepository.SaveChangesAsync(cancellationToken);
         await logService.LogAuditAsync(
             product.RestaurantId,
@@ -192,6 +193,7 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
         product.Description = request.Description.Trim();
         product.Ingredients = request.Content.Trim();
         product.IsActive = request.IsActive;
+        await SyncProductTagsAsync(product, request.Tags, cancellationToken);
 
         await adminRepository.SaveChangesAsync(cancellationToken);
         await logService.LogAuditAsync(
@@ -384,8 +386,50 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
             Price = product.Price,
             Description = product.Description,
             Content = product.Ingredients,
+            Tags = product.ProductTags
+                .OrderBy(productTag => productTag.Tag.Name)
+                .Select(productTag => productTag.Tag.Name)
+                .ToList(),
             IsActive = product.IsActive
         };
+    }
+
+    private async Task SyncProductTagsAsync(
+        Product product,
+        IReadOnlyCollection<string> rawTags,
+        CancellationToken cancellationToken)
+    {
+        var normalizedTags = TagNormalizer.NormalizeMany(rawTags)
+            .Where(tag => !string.IsNullOrWhiteSpace(tag))
+            .Take(12)
+            .ToList();
+
+        product.ProductTags.Clear();
+
+        foreach (var normalizedTag in normalizedTags)
+        {
+            var tag = await adminRepository.GetTagByNormalizedNameAsync(product.RestaurantId, normalizedTag, cancellationToken);
+            if (tag is null)
+            {
+                tag = new Tag
+                {
+                    TagId = Guid.NewGuid(),
+                    RestaurantId = product.RestaurantId,
+                    Name = normalizedTag,
+                    NormalizedName = normalizedTag
+                };
+                await adminRepository.AddTagAsync(tag, cancellationToken);
+            }
+
+            product.ProductTags.Add(new ProductTag
+            {
+                ProductTagId = Guid.NewGuid(),
+                RestaurantId = product.RestaurantId,
+                ProductId = product.ProductId,
+                TagId = tag.TagId,
+                Tag = tag
+            });
+        }
     }
 
     private static AdminTableDto MapTable(Table table)

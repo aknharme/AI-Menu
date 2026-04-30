@@ -12,6 +12,7 @@ export default function AdminLayout() {
     { label: 'Kategoriler', path: '/categories' },
     { label: 'Ürünler', path: '/products' },
     { label: 'Masalar', path: '/tables' },
+    { label: 'AI Test', path: '/ai-test' },
   ];
 
   function handleLogout() {
@@ -71,3 +72,4 @@ export default function AdminLayout() {
     </div>
   );
 }
+

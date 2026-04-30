@@ -11,7 +11,12 @@ namespace AiMenu.Api.Controllers;
 [Route("api/admin")]
 // AdminController, kategori, urun ve masa CRUD endpoint'lerini tek admin alani altinda toplar.
 [Authorize(Roles = AppRoles.Admin)]
-public class AdminController(IAdminService adminService) : ControllerBase
+public class AdminController(
+    IAdminService adminService,
+    IMessageRouterService messageRouterService,
+    IMenuContextService menuContextService,
+    IMenuGroundingService menuGroundingService,
+    IAiAssistantService aiAssistantService) : ControllerBase
 {
     [HttpGet("categories/{restaurantId:guid}")]
     [ProducesResponseType(typeof(IReadOnlyCollection<AdminCategoryDto>), StatusCodes.Status200OK)]
@@ -262,6 +267,77 @@ public class AdminController(IAdminService adminService) : ControllerBase
         {
             return BadRequest(ApiErrorResponseDto.Create(exception.Message, ApiErrorCodes.BadRequest));
         }
+    }
+
+    [HttpPost("ai/test")]
+    [ProducesResponseType(typeof(AdminAiTestResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> TestAiGrounding([FromBody] AdminAiTestRequestDto request, CancellationToken cancellationToken)
+    {
+        if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Message))
+        {
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id and message are required.", ApiErrorCodes.BadRequest));
+        }
+
+        if (!IsRestaurantAccessAllowed(request.RestaurantId))
+        {
+            return Forbid();
+        }
+
+        var intent = await messageRouterService.DetectIntentAsync(request.Message, cancellationToken);
+        if (intent != AiMessageIntent.MenuRelated)
+        {
+            return Ok(new AdminAiTestResponseDto
+            {
+                Intent = intent.ToResponseValue(),
+                QueryType = intent == AiMessageIntent.SmallTalk ? "small_talk" : "out_of_scope",
+                HasSpecificGrounding = false,
+                Reply = intent == AiMessageIntent.SmallTalk
+                    ? "Merhaba! Size menümüzden yardımcı olabilirim. Ne tarz bir ürün arıyorsunuz?"
+                    : "Ben sadece restoran menüsü, ürün önerileri ve sipariş süreci hakkında yardımcı olabilirim."
+            });
+        }
+
+        var menuContext = await menuContextService.GetActiveMenuContextAsync(request.RestaurantId, cancellationToken);
+        if (menuContext is null)
+        {
+            return NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound));
+        }
+
+        var grounding = menuGroundingService.Ground(request.Message, menuContext);
+        if (grounding.QueryType == "unavailable_category")
+        {
+            return Ok(new AdminAiTestResponseDto
+            {
+                Intent = intent.ToResponseValue(),
+                QueryType = grounding.QueryType,
+                HasSpecificGrounding = false,
+                Reply = "Menüde alkollü içecek görünmüyor. İsterseniz mevcut içecek seçeneklerinden yardımcı olabilirim.",
+                GroundedProducts = Array.Empty<AdminAiGroundedProductDto>()
+            });
+        }
+
+        var aiResponse = await aiAssistantService.ReplyAsync(request.Message, grounding.Context, cancellationToken);
+
+        return Ok(new AdminAiTestResponseDto
+        {
+            Intent = intent.ToResponseValue(),
+            QueryType = grounding.QueryType,
+            HasSpecificGrounding = grounding.HasSpecificGrounding,
+            Reply = aiResponse.Reply,
+            GroundedProducts = grounding.Context.Products
+                .Select(product => new AdminAiGroundedProductDto
+                {
+                    ProductId = product.ProductId,
+                    Name = product.Name,
+                    CategoryName = product.CategoryName,
+                    Price = product.Price,
+                    Description = product.Description,
+                    Tags = product.Tags
+                })
+                .ToList()
+        });
     }
 
     private bool IsRestaurantAccessAllowed(Guid restaurantId)

@@ -105,18 +105,7 @@ export default function ProductCard({
             <p className="line-clamp-2 text-sm leading-5 text-stone-600">{product.description}</p>
           </div>
 
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 flex-wrap gap-1.5">
-              {product.tags.slice(0, 3).map((tag) => (
-                <span
-                  key={tag}
-                  className="rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
+          <div className="flex items-center justify-end gap-3">
             <span className="shrink-0 text-sm font-semibold text-stone-500">Detay</span>
           </div>
         </div>

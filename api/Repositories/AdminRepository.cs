@@ -59,6 +59,8 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
             .AsNoTracking()
             .Where(product => product.RestaurantId == restaurantId)
             .Include(product => product.Category)
+            .Include(product => product.ProductTags)
+                .ThenInclude(productTag => productTag.Tag)
             .OrderBy(product => product.Category.DisplayOrder)
             .ThenBy(product => product.Name)
             .ToListAsync(cancellationToken);
@@ -68,6 +70,8 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
     {
         return await dbContext.Products
             .Include(product => product.Category)
+            .Include(product => product.ProductTags)
+                .ThenInclude(productTag => productTag.Tag)
             .FirstOrDefaultAsync(product => product.ProductId == productId, cancellationToken);
     }
 
@@ -75,6 +79,18 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
     {
         await dbContext.Products.AddAsync(product, cancellationToken);
         return product;
+    }
+
+    public async Task<Tag?> GetTagByNormalizedNameAsync(Guid restaurantId, string normalizedName, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.Tags
+            .FirstOrDefaultAsync(tag => tag.RestaurantId == restaurantId && tag.NormalizedName == normalizedName, cancellationToken);
+    }
+
+    public async Task<Tag> AddTagAsync(Tag tag, CancellationToken cancellationToken = default)
+    {
+        await dbContext.Tags.AddAsync(tag, cancellationToken);
+        return tag;
     }
 
     public Task DeleteProductAsync(Product product, CancellationToken cancellationToken = default)

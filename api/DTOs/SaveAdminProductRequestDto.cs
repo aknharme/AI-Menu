@@ -25,5 +25,7 @@ public class SaveAdminProductRequestDto
     [MaxLength(500, ErrorMessage = "Content cannot exceed 500 characters.")]
     public string Content { get; set; } = string.Empty;
 
+    public IReadOnlyCollection<string> Tags { get; set; } = Array.Empty<string>();
+
     public bool IsActive { get; set; } = true;
 }

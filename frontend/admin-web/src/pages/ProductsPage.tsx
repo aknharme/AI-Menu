@@ -23,6 +23,7 @@ type ProductFormState = {
   categoryId: string;
   description: string;
   content: string;
+  tags: string;
   isActive: boolean;
 };
 
@@ -32,6 +33,7 @@ const initialFormState: ProductFormState = {
   categoryId: '',
   description: '',
   content: '',
+  tags: '',
   isActive: true,
 };
 
@@ -115,6 +117,10 @@ export default function ProductsPage() {
       price: Number(form.price),
       description: form.description.trim(),
       content: form.content.trim(),
+      tags: form.tags
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter(Boolean),
       isActive: form.isActive,
     };
 
@@ -159,6 +165,7 @@ export default function ProductsPage() {
       categoryId: product.categoryId,
       description: product.description,
       content: product.content,
+      tags: product.tags.join(', '),
       isActive: product.isActive,
     });
   }
@@ -230,6 +237,19 @@ export default function ProductsPage() {
             />
           </label>
 
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-stone-700">AI Etiketleri</span>
+            <input
+              value={form.tags}
+              onChange={(event) => setForm((current) => ({ ...current, tags: event.target.value }))}
+              placeholder="hafif, ekşi, ferah, soğuk"
+              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            />
+            <p className="text-xs leading-5 text-stone-500">
+              Virgül ile ayırın. Bu etiketler müşteriye gösterilmez, AI eşleştirmesinde kullanılır.
+            </p>
+          </label>
+
           <label className="flex items-center justify-between rounded-2xl border border-stone-200 px-4 py-3">
             <span className="text-sm font-medium text-stone-700">Aktif / Pasif</span>
             <input
@@ -293,6 +313,11 @@ export default function ProductsPage() {
                     <h3 className="text-base font-semibold text-stone-950">{product.name}</h3>
                     <p className="text-sm leading-6 text-stone-600">{product.description || 'Açıklama yok'}</p>
                     <p className="text-sm font-medium text-stone-500">{product.content || 'İçerik yok'}</p>
+                    {product.tags.length > 0 ? (
+                      <p className="text-xs font-medium text-amber-700">
+                        AI etiketleri: {product.tags.join(', ')}
+                      </p>
+                    ) : null}
                   </div>
                   <div className="space-y-2 text-right">
                     <p className="text-base font-semibold text-stone-950">{product.price.toFixed(2)} TL</p>

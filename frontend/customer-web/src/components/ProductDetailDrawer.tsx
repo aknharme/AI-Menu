@@ -202,24 +202,6 @@ export default function ProductDetailDrawer({
                 )}
               </section>
 
-              {detail.tags.length > 0 && (
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
-                    Etiketler
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {detail.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-              )}
-
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
                   Siparis Tercihi

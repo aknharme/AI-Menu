@@ -133,6 +133,24 @@ var host = new WebHostBuilder()
             client.BaseAddress = new Uri(ollamaOptions.BaseUrl.TrimEnd('/') + "/");
             client.Timeout = TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds));
         });
+        services.AddHttpClient<IMessageRouterService, MessageRouterService>((serviceProvider, client) =>
+        {
+            var ollamaOptions = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>()
+                .Value;
+
+            client.BaseAddress = new Uri(ollamaOptions.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds));
+        });
+        services.AddHttpClient<IAiAssistantService, AiAssistantService>((serviceProvider, client) =>
+        {
+            var ollamaOptions = serviceProvider
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>()
+                .Value;
+
+            client.BaseAddress = new Uri(ollamaOptions.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds));
+        });
 
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey));
@@ -174,6 +192,9 @@ var host = new WebHostBuilder()
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IRecommendationService, RecommendationService>();
         services.AddScoped<ICashierService, CashierService>();
+        services.AddScoped<IMenuContextService, MenuContextService>();
+        services.AddScoped<IMenuGroundingService, MenuGroundingService>();
+        services.AddScoped<IAiMessageService, AiMessageService>();
     })
     .Configure(app =>
     {

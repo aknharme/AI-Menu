@@ -335,7 +335,7 @@ export default function MenuPage() {
   function showRecommendationResult(result: RecommendationResponse) {
     setRecommendation(result);
     setLastRecommendation(result);
-    setShowRecommendations(result.products.length > 0);
+    setShowRecommendations(Boolean(result.message || result.products.length > 0));
   }
 
   async function handleRecommendationSubmit(event: FormEvent<HTMLFormElement>) {
@@ -706,12 +706,7 @@ export default function MenuPage() {
                       );
                     })}
                   </div>
-                ) : (
-                  <EmptyState
-                    title="Öneri bulunamadı"
-                    description="Bu istek için uygun aktif ürün bulunamadı."
-                  />
-                )}
+                ) : null}
               </div>
             )}
           </section>

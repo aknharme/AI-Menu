@@ -25,6 +25,7 @@ export type AdminProduct = {
   price: number;
   description: string;
   content: string;
+  tags: string[];
   isActive: boolean;
 };
 
@@ -36,6 +37,7 @@ export type SaveAdminProductRequest = {
   price: number;
   description: string;
   content: string;
+  tags: string[];
   isActive: boolean;
 };
 
@@ -89,4 +91,21 @@ export type RecommendationStat = {
   productId: string;
   name: string;
   recommendationCount: number;
+};
+
+export type AdminAiGroundedProduct = {
+  productId: string;
+  name: string;
+  categoryName: string;
+  price: number;
+  description: string;
+  tags: string[];
+};
+
+export type AdminAiTestResponse = {
+  intent: string;
+  queryType: string;
+  hasSpecificGrounding: boolean;
+  reply: string;
+  groundedProducts: AdminAiGroundedProduct[];
 };

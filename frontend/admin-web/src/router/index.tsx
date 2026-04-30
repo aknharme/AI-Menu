@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import RequireAuth from '../components/RequireAuth';
 import AdminLayout from '../layouts/AdminLayout';
+import AiTestPage from '../pages/AiTestPage';
 import CategoriesPage from '../pages/CategoriesPage';
 import DashboardPage from '../pages/DashboardPage';
 import LoginPage from '../pages/LoginPage';
@@ -37,6 +38,10 @@ export const router = createBrowserRouter(
             {
               path: 'tables',
               element: <TablesPage />,
+            },
+            {
+              path: 'ai-test',
+              element: <AiTestPage />,
             },
           ],
         },
