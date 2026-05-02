@@ -2,9 +2,11 @@ import { createBrowserRouter } from 'react-router-dom';
 import RequireAuth from '../components/RequireAuth';
 import AdminLayout from '../layouts/AdminLayout';
 import AiTestPage from '../pages/AiTestPage';
+import AccountingPage from '../pages/AccountingPage';
 import CategoriesPage from '../pages/CategoriesPage';
 import DashboardPage from '../pages/DashboardPage';
 import LoginPage from '../pages/LoginPage';
+import OrdersPage from '../pages/OrdersPage';
 import ProductsPage from '../pages/ProductsPage';
 import TablesPage from '../pages/TablesPage';
 
@@ -34,6 +36,14 @@ export const router = createBrowserRouter(
             {
               path: 'products',
               element: <ProductsPage />,
+            },
+            {
+              path: 'orders',
+              element: <OrdersPage />,
+            },
+            {
+              path: 'accounting',
+              element: <AccountingPage />,
             },
             {
               path: 'tables',

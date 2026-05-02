@@ -93,6 +93,49 @@ export type RecommendationStat = {
   recommendationCount: number;
 };
 
+export type AdminOrderStatus =
+  | 'Pending'
+  | 'Preparing'
+  | 'Ready'
+  | 'Paid'
+  | 'Cancelled'
+  | string;
+
+export type AdminOrderListItem = {
+  orderId: string;
+  restaurantId: string;
+  tableId: string;
+  tableName: string;
+  status: AdminOrderStatus;
+  createdAtUtc: string;
+  totalAmount: number;
+  itemCount: number;
+};
+
+export type AdminOrderItem = {
+  orderItemId: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  note: string;
+  variantName: string;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+export type AdminOrderDetail = {
+  orderId: string;
+  restaurantId: string;
+  tableId: string;
+  tableName: string;
+  customerName: string;
+  note: string;
+  status: AdminOrderStatus;
+  createdAtUtc: string;
+  totalAmount: number;
+  items: AdminOrderItem[];
+};
+
 export type AdminAiGroundedProduct = {
   productId: string;
   name: string;

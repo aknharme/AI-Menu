@@ -11,6 +11,8 @@ export default function AdminLayout() {
     { label: 'Dashboard', path: '/' },
     { label: 'Kategoriler', path: '/categories' },
     { label: 'Ürünler', path: '/products' },
+    { label: 'Siparişler', path: '/orders' },
+    { label: 'Muhasebe', path: '/accounting' },
     { label: 'Masalar', path: '/tables' },
     { label: 'AI Test', path: '/ai-test' },
   ];
@@ -72,4 +74,3 @@ export default function AdminLayout() {
     </div>
   );
 }
-

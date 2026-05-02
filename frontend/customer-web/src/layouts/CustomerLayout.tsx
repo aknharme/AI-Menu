@@ -5,11 +5,25 @@ import CartDrawer from '../components/CartDrawer';
 import { useCart } from '../contexts/CartContext';
 import { useQueryParams } from '../hooks/useQueryParams';
 import { formatPrice } from '../utils/formatPrice';
+import {
+  getActiveOrderStorageEventName,
+  getStoredActiveOrder,
+  type StoredActiveOrder,
+} from '../utils/activeOrderStorage';
+
+const customerStatusLabels: Record<string, string> = {
+  Pending: 'Bekliyor',
+  Preparing: 'Onaylandi',
+  Ready: 'Hazirlaniyor',
+  Paid: 'Teslim edildi',
+  Cancelled: 'Iptal edildi',
+};
 
 export default function CustomerLayout() {
   const { restaurantId, tableId } = useQueryParams();
   const { itemCount, totalPrice } = useCart();
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [activeOrder, setActiveOrder] = useState<StoredActiveOrder | null>(null);
   const containerRef = useRef<HTMLElement | null>(null);
   const cartRef = useRef<HTMLDivElement | null>(null);
   const dragStateRef = useRef({
@@ -71,6 +85,21 @@ export default function CustomerLayout() {
     };
   }, [placeCartAtStart]);
 
+  useEffect(() => {
+    function syncActiveOrder() {
+      setActiveOrder(getStoredActiveOrder(restaurantId, tableId));
+    }
+
+    syncActiveOrder();
+    window.addEventListener('storage', syncActiveOrder);
+    window.addEventListener(getActiveOrderStorageEventName(), syncActiveOrder);
+
+    return () => {
+      window.removeEventListener('storage', syncActiveOrder);
+      window.removeEventListener(getActiveOrderStorageEventName(), syncActiveOrder);
+    };
+  }, [restaurantId, tableId]);
+
   function handleCartPointerDown(event: PointerEvent<HTMLDivElement>) {
     const currentPosition = clampCartPosition(cartPosition);
     dragStateRef.current = {
@@ -125,6 +154,15 @@ export default function CustomerLayout() {
     setIsCartOpen(true);
   }
 
+  const hasActiveOrder = Boolean(activeOrder && itemCount === 0);
+  const buttonLabel = hasActiveOrder ? 'Siparisim' : 'Sepet';
+  const buttonSummary = hasActiveOrder
+    ? customerStatusLabels[activeOrder?.status ?? ''] ?? activeOrder?.status ?? 'Takip et'
+    : `${itemCount} ürün`;
+  const buttonPriceLabel = hasActiveOrder
+    ? formatPrice(activeOrder?.totalAmount ?? 0)
+    : formatPrice(totalPrice);
+
   return (
     <div className="min-h-screen bg-stone-100">
       <main
@@ -154,7 +192,9 @@ export default function CustomerLayout() {
         <div className="pointer-events-auto">
           <CartButton
             itemCount={itemCount}
-            totalPriceLabel={formatPrice(totalPrice)}
+            totalPriceLabel={buttonPriceLabel}
+            label={buttonLabel}
+            summary={buttonSummary}
             onClick={handleCartClick}
           />
         </div>

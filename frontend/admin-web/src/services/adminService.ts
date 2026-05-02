@@ -1,6 +1,8 @@
 import api from './api';
 import type {
   AdminCategory,
+  AdminOrderDetail,
+  AdminOrderListItem,
   DashboardSummary,
   AdminProduct,
   RecommendationStat,
@@ -99,6 +101,28 @@ export async function getRecentOrders(restaurantId: string, date?: string) {
   const response = await api.get<RecentOrder[]>(`/admin/stats/recent-orders/${restaurantId}`, {
     params: date ? { date } : undefined,
   });
+  return response.data;
+}
+
+export async function getAdminOrders(restaurantId: string) {
+  const response = await api.get<AdminOrderListItem[]>(`/cashier/orders/${restaurantId}`);
+  return response.data;
+}
+
+export async function getAdminOrderDetail(restaurantId: string, orderId: string) {
+  const response = await api.get<AdminOrderDetail>(`/cashier/orders/${restaurantId}/${orderId}`);
+  return response.data;
+}
+
+export async function updateAdminOrderStatus(
+  restaurantId: string,
+  orderId: string,
+  status: string,
+) {
+  const response = await api.put<AdminOrderDetail>(
+    `/cashier/orders/${restaurantId}/${orderId}/status`,
+    { status },
+  );
   return response.data;
 }
 

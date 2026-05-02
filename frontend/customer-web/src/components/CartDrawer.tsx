@@ -1,10 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import InlineAlert from './InlineAlert';
 import { useCart } from '../contexts/CartContext';
-import { createOrder } from '../services/orderService';
+import { createOrder, getOrder } from '../services/orderService';
 import type { OrderResponse } from '../types/order';
 import { formatPrice } from '../utils/formatPrice';
 import { extractApiErrorMessage } from '../utils/apiError';
+import {
+  clearActiveOrder,
+  getStoredActiveOrder,
+  saveActiveOrder,
+} from '../utils/activeOrderStorage';
 
 type CartDrawerProps = {
   isOpen: boolean;
@@ -30,8 +35,123 @@ export default function CartDrawer({
   const [customerName, setCustomerName] = useState('');
   const [orderNote, setOrderNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [orderLoading, setOrderLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createdOrder, setCreatedOrder] = useState<OrderResponse | null>(null);
+  const customerNameInputRef = useRef<HTMLInputElement | null>(null);
+
+  const statusLabels: Record<string, string> = {
+    Pending: 'Sipariş alındı',
+    Preparing: 'Sipariş onaylandı',
+    Ready: 'Sipariş hazırlanıyor',
+    Paid: 'Sipariş teslim edildi',
+    Cancelled: 'Sipariş iptal edildi',
+  };
+
+  const statusDescriptions: Record<string, string> = {
+    Pending: 'Siparişin mutfağa iletildi. Onay bekliyor.',
+    Preparing: 'Restoran siparişini gördü ve hazırlık sırasına aldı.',
+    Ready: 'Siparişin hazırlandı. Kısa süre içinde sana ulaşacak.',
+    Paid: 'Sipariş teslim edildi. Afiyet olsun.',
+    Cancelled: 'Sipariş işleme alınmadı. Gerekirse işletme ile görüşebilirsin.',
+  };
+
+  const statusTone: Record<string, string> = {
+    Pending: 'border-amber-200 bg-amber-50 text-amber-900',
+    Preparing: 'border-sky-200 bg-sky-50 text-sky-900',
+    Ready: 'border-emerald-200 bg-emerald-50 text-emerald-900',
+    Paid: 'border-stone-200 bg-stone-100 text-stone-800',
+    Cancelled: 'border-rose-200 bg-rose-50 text-rose-800',
+  };
+
+  const orderSteps = [
+    { key: 'Pending', label: 'Alindi' },
+    { key: 'Preparing', label: 'Onaylandi' },
+    { key: 'Ready', label: 'Hazirlaniyor' },
+    { key: 'Paid', label: 'Teslim edildi' },
+  ];
+
+  useEffect(() => {
+    const storedOrder = getStoredActiveOrder(restaurantId, tableId);
+    if (!storedOrder) {
+      setCreatedOrder(null);
+      return;
+    }
+
+    setCreatedOrder((current) => {
+      if (current?.orderId === storedOrder.orderId && current.status === storedOrder.status) {
+        return current;
+      }
+
+      return {
+        orderId: storedOrder.orderId,
+        restaurantId: storedOrder.restaurantId,
+        tableId: storedOrder.tableId,
+        customerName: '',
+        note: '',
+        status: storedOrder.status,
+        totalAmount: storedOrder.totalAmount,
+        createdAtUtc: storedOrder.createdAtUtc,
+        items: current?.orderId === storedOrder.orderId ? current.items : [],
+      };
+    });
+  }, [restaurantId, tableId]);
+
+  useEffect(() => {
+    if (!createdOrder?.orderId || !restaurantId || !tableId) {
+      return;
+    }
+
+    const orderId = createdOrder.orderId;
+    let cancelled = false;
+
+    async function refreshOrderStatus() {
+      try {
+        setOrderLoading(true);
+        const latestOrder = await getOrder(orderId);
+
+        if (cancelled) {
+          return;
+        }
+
+        setCreatedOrder(latestOrder);
+        saveActiveOrder(latestOrder);
+      } catch {
+        if (!cancelled) {
+          setError((current) => current ?? 'Sipariş durumu şu anda yenilenemedi.');
+        }
+      } finally {
+        if (!cancelled) {
+          setOrderLoading(false);
+        }
+      }
+    }
+
+    void refreshOrderStatus();
+
+    if (['Paid', 'Cancelled'].includes(createdOrder.status)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const intervalId = window.setInterval(() => {
+      void refreshOrderStatus();
+    }, 15000);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [createdOrder?.orderId, createdOrder?.status, restaurantId, tableId]);
+
+  useEffect(() => {
+    if (!isOpen || createdOrder || cartItems.length === 0) {
+      return;
+    }
+
+    customerNameInputRef.current?.focus();
+  }, [cartItems.length, createdOrder, isOpen]);
 
   const canSubmit = useMemo(
     () => Boolean(restaurantId && tableId && cartItems.length > 0 && !submitting),
@@ -77,6 +197,7 @@ export default function CartDrawer({
       });
 
       setCreatedOrder(order);
+      saveActiveOrder(order);
       clearCart();
       setCustomerName('');
       setOrderNote('');
@@ -95,6 +216,8 @@ export default function CartDrawer({
   if (!isOpen) {
     return null;
   }
+
+  const activeStepIndex = orderSteps.findIndex((step) => step.key === createdOrder?.status);
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-stone-950/55 p-0 sm:p-6">
@@ -123,14 +246,88 @@ export default function CartDrawer({
           )}
 
           {createdOrder && (
-            <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                Sipariş Alındı
+            <div
+              className={`rounded-[28px] border p-5 ${statusTone[createdOrder.status] ?? 'border-emerald-200 bg-emerald-50 text-emerald-900'}`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em]">
+                    Aktif Sipariş
+                  </p>
+                  <h3 className="mt-2 text-lg font-semibold">
+                    Sipariş numarası: {createdOrder.orderId}
+                  </h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearActiveOrder(restaurantId, tableId);
+                    setCreatedOrder(null);
+                  }}
+                  className="rounded-full border border-current/15 px-3 py-1.5 text-xs font-semibold"
+                >
+                  Kapat
+                </button>
+              </div>
+
+              <p className="mt-3 text-sm font-medium">
+                {statusLabels[createdOrder.status] ?? createdOrder.status}
               </p>
-              <h3 className="mt-2 text-lg font-semibold">Sipariş numarası: {createdOrder.orderId}</h3>
-              <p className="mt-2 text-sm">
-                Durum: {createdOrder.status} | Toplam: {formatPrice(createdOrder.totalAmount)}
+              <p className="mt-1 text-sm opacity-80">
+                {statusDescriptions[createdOrder.status] ?? 'Sipariş durumun güncelleniyor.'}
               </p>
+
+              <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                {orderSteps.map((step, index) => {
+                  const isDone =
+                    createdOrder.status === 'Cancelled'
+                      ? false
+                      : activeStepIndex >= 0 && index <= activeStepIndex;
+                  const isCurrent = createdOrder.status === step.key;
+
+                  return (
+                    <div key={step.key} className="space-y-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          isDone ? 'bg-current' : 'bg-white/60'
+                        }`}
+                      />
+                      <p className={`text-xs ${isCurrent ? 'font-semibold' : 'opacity-75'}`}>
+                        {step.label}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                <span>Toplam: {formatPrice(createdOrder.totalAmount)}</span>
+                <span>Durum: {statusLabels[createdOrder.status] ?? createdOrder.status}</span>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setError(null);
+                      setOrderLoading(true);
+                      const latestOrder = await getOrder(createdOrder.orderId);
+                      setCreatedOrder(latestOrder);
+                      saveActiveOrder(latestOrder);
+                    } catch (requestError: any) {
+                      setError(
+                        extractApiErrorMessage(
+                          requestError,
+                          'Sipariş durumu yenilenemedi. Lütfen tekrar deneyin.',
+                        ),
+                      );
+                    } finally {
+                      setOrderLoading(false);
+                    }
+                  }}
+                  className="rounded-full border border-current/15 px-3 py-1.5 text-xs font-semibold"
+                >
+                  {orderLoading ? 'Yenileniyor...' : 'Durumu yenile'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -138,7 +335,9 @@ export default function CartDrawer({
 
           {cartItems.length === 0 ? (
             <div className="rounded-[28px] border border-dashed border-stone-300 bg-stone-50 px-6 py-10 text-center text-sm text-stone-500">
-              Sepetin şu anda boş. Menüden ürün seçerek siparişini oluşturmaya başlayabilirsin.
+              {createdOrder
+                ? 'Aktif siparişin yukarıda görünüyor. Yeni ürün eklemek istersen menüden seçim yapabilirsin.'
+                : 'Sepetin şu anda boş. Menüden ürün seçerek siparişini oluşturmaya başlayabilirsin.'}
             </div>
           ) : (
             <div className="space-y-4">
@@ -209,31 +408,41 @@ export default function CartDrawer({
             </div>
           )}
 
-          <section className="rounded-[28px] border border-stone-200 bg-stone-50 p-4">
-            <div className="grid gap-4">
-              <label className="block">
-                <span className="text-sm font-medium text-stone-700">Müşteri adı</span>
-                <input
-                  value={customerName}
-                  onChange={(event) => setCustomerName(event.target.value)}
-                  maxLength={120}
-                  className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
-                  placeholder="Opsiyonel"
-                />
-              </label>
+          {cartItems.length > 0 ? (
+            <section className="rounded-[28px] border border-stone-200 bg-stone-50 p-4">
+              <div className="mb-3">
+                <p className="text-sm font-semibold text-stone-900">Sipariş bilgisi</p>
+                <p className="mt-1 text-xs leading-5 text-stone-500">
+                  İsmini ve varsa genel sipariş notunu buraya yazabilirsin.
+                </p>
+              </div>
 
-              <label className="block">
-                <span className="text-sm font-medium text-stone-700">Sipariş notu</span>
-                <input
-                  value={orderNote}
-                  onChange={(event) => setOrderNote(event.target.value)}
-                  maxLength={500}
-                  className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
-                  placeholder="Örn. önce içecekler gelsin"
-                />
-              </label>
-            </div>
-          </section>
+              <div className="grid gap-4">
+                <label className="block">
+                  <span className="text-sm font-medium text-stone-700">Müşteri adı</span>
+                  <input
+                    ref={customerNameInputRef}
+                    value={customerName}
+                    onChange={(event) => setCustomerName(event.target.value)}
+                    maxLength={120}
+                    className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
+                    placeholder="Adını yazabilirsin"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-stone-700">Sipariş notu</span>
+                  <input
+                    value={orderNote}
+                    onChange={(event) => setOrderNote(event.target.value)}
+                    maxLength={500}
+                    className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
+                    placeholder="Örn. önce içecekler gelsin"
+                  />
+                </label>
+              </div>
+            </section>
+          ) : null}
         </div>
 
         <div className="shrink-0 border-t border-stone-200 bg-white px-4 py-4">
@@ -241,14 +450,28 @@ export default function CartDrawer({
             <span className="text-stone-500">Toplam</span>
             <span className="text-lg font-semibold text-stone-950">{formatPrice(totalPrice)}</span>
           </div>
-          <button
-            type="button"
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            className="w-full rounded-2xl bg-stone-950 px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {submitting ? 'Sipariş gönderiliyor...' : 'Siparişi gönder'}
-          </button>
+          {cartItems.length > 0 ? (
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="w-full rounded-2xl bg-stone-950 px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? 'Sipariş gönderiliyor...' : 'Siparişi gönder'}
+            </button>
+          ) : createdOrder ? (
+            <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-sm font-medium text-stone-600">
+              Aktif siparişin takip ediliyor.
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="w-full rounded-2xl bg-stone-300 px-4 py-3 text-sm font-semibold text-white"
+            >
+              Siparişi gönder
+            </button>
+          )}
         </div>
       </div>
     </div>
