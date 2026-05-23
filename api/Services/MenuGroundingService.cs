@@ -125,10 +125,12 @@ public class MenuGroundingService : IMenuGroundingService
                 RestaurantName = menuContext.RestaurantName,
                 Products = scopedProducts
             },
-            SuggestedProducts = scopedProducts
+            SuggestedProducts = targetProducts.Count > 0
+                ? scopedProducts
                 .Take(ProductLimit)
                 .Select(ToSuggestedProduct)
                 .ToList()
+                : Array.Empty<AiSuggestedProductDto>()
         };
     }
 

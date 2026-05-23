@@ -1,16 +1,11 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using AiMenu.Api.DTOs;
-using AiMenu.Api.Options;
 using AiMenu.Api.Services.Interfaces;
-using Microsoft.Extensions.Options;
 
 namespace AiMenu.Api.Services;
 
-public class MessageRouterService(HttpClient httpClient, IOptions<OllamaOptions> options) : IMessageRouterService
+public class MessageRouterService(IAiTextGenerationService aiTextGenerationService) : IMessageRouterService
 {
-    private readonly OllamaOptions ollamaOptions = options.Value;
-
     public async Task<AiMessageIntent> DetectIntentAsync(string message, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(message))
@@ -18,23 +13,16 @@ public class MessageRouterService(HttpClient httpClient, IOptions<OllamaOptions>
             return AiMessageIntent.OutOfScope;
         }
 
+        var ruleIntent = DetectIntentWithRules(message);
+        if (ruleIntent == AiMessageIntent.SmallTalk || ruleIntent == AiMessageIntent.OutOfScope)
+        {
+            return ruleIntent;
+        }
+
         try
         {
-            var request = new OllamaGenerateRequest
-            {
-                Model = ollamaOptions.Model,
-                Stream = false,
-                Prompt = BuildClassifierPrompt(message)
-            };
-
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds)));
-
-            var response = await httpClient.PostAsJsonAsync("/api/generate", request, timeoutCts.Token);
-            response.EnsureSuccessStatusCode();
-
-            var payload = await response.Content.ReadFromJsonAsync<OllamaGenerateResponse>(cancellationToken: timeoutCts.Token);
-            var classifierResult = ParseClassifierResponse(payload?.Response ?? string.Empty);
+            var rawContent = await aiTextGenerationService.GenerateAsync(BuildClassifierPrompt(message), cancellationToken);
+            var classifierResult = ParseClassifierResponse(rawContent);
             var intent = ParseIntent(classifierResult.Intent);
 
             if (classifierResult.Confidence >= 0.55)
@@ -42,12 +30,11 @@ public class MessageRouterService(HttpClient httpClient, IOptions<OllamaOptions>
                 return intent;
             }
 
-            var fallbackIntent = DetectIntentWithRules(message);
-            return fallbackIntent == AiMessageIntent.OutOfScope ? intent : fallbackIntent;
+            return intent;
         }
         catch
         {
-            return DetectIntentWithRules(message);
+            return ruleIntent;
         }
     }
 
@@ -113,7 +100,11 @@ public class MessageRouterService(HttpClient httpClient, IOptions<OllamaOptions>
         var words = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         if (words.Length <= 4 &&
-            ContainsAny(normalized, "merhaba", "selam", "sa", "gunaydin", "iyi aksamlar", "nasilsin", "tesekkur", "tesekkurler"))
+            ContainsAny(normalized,
+                "merhaba", "selam", "sa", "gunaydin", "iyi aksamlar", "nasilsin",
+                "tesekkur", "tesekkurler", "teşekkür", "teşekkürler",
+                "sagol", "sağol", "sag olun", "sağ olun", "eyvallah",
+                "tamam", "okey", "evet", "hayir", "gorusuruz", "hosca kal"))
         {
             return AiMessageIntent.SmallTalk;
         }
@@ -157,17 +148,5 @@ public class MessageRouterService(HttpClient httpClient, IOptions<OllamaOptions>
         var start = rawContent.IndexOf('{');
         var end = rawContent.LastIndexOf('}');
         return start >= 0 && end > start ? rawContent[start..(end + 1)] : string.Empty;
-    }
-
-    private sealed class OllamaGenerateRequest
-    {
-        public string Model { get; set; } = string.Empty;
-        public string Prompt { get; set; } = string.Empty;
-        public bool Stream { get; set; }
-    }
-
-    private sealed class OllamaGenerateResponse
-    {
-        public string Response { get; set; } = string.Empty;
     }
 }

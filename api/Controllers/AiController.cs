@@ -2,6 +2,7 @@ using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AiMenu.Api.Controllers;
 
@@ -13,6 +14,7 @@ public class AiController(IAiMessageService aiMessageService) : ControllerBase
     [ProducesResponseType(typeof(AiMessageResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [EnableRateLimiting("PublicAi")]
     public async Task<IActionResult> SendMessage([FromBody] AiMessageRequestDto request, CancellationToken cancellationToken)
     {
         if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Message))

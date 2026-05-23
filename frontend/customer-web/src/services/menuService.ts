@@ -11,7 +11,7 @@ export async function getProductDetail(restaurantId: string, productId: string) 
   return response.data;
 }
 
-export async function getRecommendationsByPrompt(restaurantId: string, prompt: string) {
+export async function getRecommendationsByPrompt(restaurantId: string, prompt: string, tableId?: string) {
   const response = await api.post<{
     intent: string;
     reply: string;
@@ -24,6 +24,7 @@ export async function getRecommendationsByPrompt(restaurantId: string, prompt: s
     }>;
   }>('/ai/message', {
     restaurantId,
+    tableId,
     message: prompt,
   });
 

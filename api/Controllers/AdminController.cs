@@ -318,7 +318,12 @@ public class AdminController(
             });
         }
 
-        var aiResponse = await aiAssistantService.ReplyAsync(request.Message, grounding.Context, cancellationToken);
+        var aiResponse = await aiAssistantService.ReplyAsync(
+            request.Message,
+            grounding.Context,
+            Array.Empty<AiConversationTurnDto>(),
+            grounding.SuggestedProducts.Count > 0,
+            cancellationToken);
 
         return Ok(new AdminAiTestResponseDto
         {

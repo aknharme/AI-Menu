@@ -19,6 +19,16 @@ public class CashierService(
         "Cancelled"
     ];
 
+    private static readonly IReadOnlyDictionary<string, IReadOnlyCollection<string>> AllowedStatusTransitions =
+        new Dictionary<string, IReadOnlyCollection<string>>(StringComparer.Ordinal)
+        {
+            ["Pending"] = ["Preparing", "Cancelled"],
+            ["Preparing"] = ["Ready", "Cancelled"],
+            ["Ready"] = ["Paid", "Cancelled"],
+            ["Paid"] = [],
+            ["Cancelled"] = []
+        };
+
     public async Task<IReadOnlyCollection<CashierOrderListDto>?> GetOrdersAsync(
         Guid restaurantId,
         CancellationToken cancellationToken = default)
@@ -91,6 +101,12 @@ public class CashierService(
         {
             var currentOrder = await orderRepository.GetCashierOrderAsync(restaurantId, orderId, cancellationToken);
             return currentOrder is null ? null : MapDetail(currentOrder);
+        }
+
+        if (!AllowedStatusTransitions.TryGetValue(order.Status, out var nextStatuses) ||
+            !nextStatuses.Contains(normalizedStatus))
+        {
+            throw new InvalidOperationException($"Order status cannot transition from {order.Status} to {normalizedStatus}.");
         }
 
         var previousStatus = order.Status;

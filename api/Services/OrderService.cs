@@ -8,6 +8,9 @@ namespace AiMenu.Api.Services;
 // Siparis olusturma akisinin business rule katmani burada bulunur.
 public class OrderService(IOrderRepository orderRepository, ILogService logService) : IOrderService
 {
+    private const int MaxDistinctOrderLines = 30;
+    private const int MaxTotalQuantity = 99;
+
     public async Task<OrderResponseDto> CreateOrderAsync(CreateOrderRequestDto request, CancellationToken cancellationToken = default)
     {
         if (request.RestaurantId == Guid.Empty)
@@ -25,6 +28,27 @@ public class OrderService(IOrderRepository orderRepository, ILogService logServi
             throw new InvalidOperationException("At least one item is required to create an order.");
         }
 
+        var normalizedItems = NormalizeOrderItems(request.Items);
+        if (normalizedItems.Count == 0)
+        {
+            throw new InvalidOperationException("At least one valid item is required to create an order.");
+        }
+
+        if (normalizedItems.Count > MaxDistinctOrderLines)
+        {
+            throw new InvalidOperationException($"An order can contain at most {MaxDistinctOrderLines} distinct lines.");
+        }
+
+        if (normalizedItems.Any(item => item.Quantity > MaxTotalQuantity))
+        {
+            throw new InvalidOperationException($"A single order line can contain at most {MaxTotalQuantity} items.");
+        }
+
+        if (normalizedItems.Sum(item => item.Quantity) > MaxTotalQuantity)
+        {
+            throw new InvalidOperationException($"An order can contain at most {MaxTotalQuantity} total items.");
+        }
+
         // Siparis verilen masa gercekten ilgili restorana ait olmali.
         var table = await orderRepository.GetTableAsync(request.RestaurantId, request.TableId, cancellationToken);
         if (table is null)
@@ -33,7 +57,7 @@ public class OrderService(IOrderRepository orderRepository, ILogService logServi
         }
 
         // Client'in gonderdigi urunler bu restoran menusunde var mi diye toplu kontrol yapiyoruz.
-        var productIds = request.Items.Select(x => x.ProductId).Distinct().ToList();
+        var productIds = normalizedItems.Select(x => x.ProductId).Distinct().ToList();
         var products = await orderRepository.GetProductsByIdsAsync(request.RestaurantId, productIds, cancellationToken);
         var productMap = products.ToDictionary(x => x.ProductId);
 
@@ -42,7 +66,7 @@ public class OrderService(IOrderRepository orderRepository, ILogService logServi
             throw new InvalidOperationException("One or more requested products were not found in this restaurant menu.");
         }
 
-        var variantIds = request.Items
+        var variantIds = normalizedItems
             .Where(x => x.VariantId.HasValue)
             .Select(x => x.VariantId!.Value)
             .Distinct()
@@ -70,7 +94,7 @@ public class OrderService(IOrderRepository orderRepository, ILogService logServi
             CreatedAtUtc = DateTimeOffset.UtcNow
         };
 
-        foreach (var item in request.Items)
+        foreach (var item in normalizedItems)
         {
             var product = productMap[item.ProductId];
             ProductVariant? variant = null;
@@ -89,7 +113,12 @@ public class OrderService(IOrderRepository orderRepository, ILogService logServi
             }
 
             // Siparis satiri toplami backend'de hesaplanir; client verisine guvenilmez.
-            var unitPrice = product.Price + (variant?.PriceDelta ?? 0m);
+            var unitPrice = decimal.Round(product.Price + (variant?.PriceDelta ?? 0m), 2, MidpointRounding.AwayFromZero);
+            if (unitPrice < 0)
+            {
+                throw new InvalidOperationException("Order item price cannot be negative.");
+            }
+
             var lineTotal = unitPrice * item.Quantity;
 
             order.Items.Add(new OrderItem
@@ -102,12 +131,12 @@ public class OrderService(IOrderRepository orderRepository, ILogService logServi
                 Note = item.Note.Trim(),
                 Quantity = item.Quantity,
                 UnitPrice = unitPrice,
-                LineTotal = lineTotal
+                LineTotal = decimal.Round(lineTotal, 2, MidpointRounding.AwayFromZero)
             });
         }
 
         // Genel toplam da yine backend tarafinda hesaplanir.
-        order.TotalAmount = order.Items.Sum(x => x.LineTotal);
+        order.TotalAmount = decimal.Round(order.Items.Sum(x => x.LineTotal), 2, MidpointRounding.AwayFromZero);
 
         var createdOrder = await orderRepository.AddOrderAsync(order, cancellationToken);
         await logService.LogOrderStatusAsync(
@@ -120,6 +149,27 @@ public class OrderService(IOrderRepository orderRepository, ILogService logServi
 
         // Response DTO, entity'yi dis dunyaya birebir acmadan API cevabi uretir.
         return MapOrder(createdOrder, productMap, variantMap);
+    }
+
+    private static IReadOnlyCollection<CreateOrderItemRequestDto> NormalizeOrderItems(
+        IReadOnlyCollection<CreateOrderItemRequestDto> items)
+    {
+        return items
+            .Where(item => item.ProductId != Guid.Empty && item.Quantity > 0)
+            .GroupBy(item => new
+            {
+                item.ProductId,
+                item.VariantId,
+                Note = (item.Note ?? string.Empty).Trim()
+            })
+            .Select(group => new CreateOrderItemRequestDto
+            {
+                ProductId = group.Key.ProductId,
+                VariantId = group.Key.VariantId,
+                Note = group.Key.Note,
+                Quantity = group.Sum(item => item.Quantity)
+            })
+            .ToList();
     }
 
     public async Task<OrderResponseDto?> GetOrderAsync(Guid orderId, CancellationToken cancellationToken = default)

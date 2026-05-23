@@ -14,6 +14,15 @@ import { formatPrice } from '../utils/formatPrice';
 import { extractApiErrorMessage } from '../utils/apiError';
 
 const PROMPT_MAX_LENGTH = 300;
+const QUICK_FILTERS = [
+  { id: 'all', label: 'Tumu' },
+  { id: 'light', label: 'Hafif' },
+  { id: 'chicken', label: 'Tavuk' },
+  { id: 'drink', label: 'Icecek' },
+  { id: 'dessert', label: 'Tatli' },
+] as const;
+
+type QuickFilterId = (typeof QUICK_FILTERS)[number]['id'];
 
 // 29 Nisan 2026: Ana menü kategorileri (Tatlı, İçecek, Yemek)
 // Not: Ara Sıcak kategorisi silinmiştir
@@ -217,6 +226,8 @@ export default function MenuPage() {
   const [activeCategoryId, setActiveCategoryId] = useState<string>();
   const [activeMainGroupId, setActiveMainGroupId] = useState<string>();
   const [prompt, setPrompt] = useState('');
+  const [menuSearch, setMenuSearch] = useState('');
+  const [quickFilter, setQuickFilter] = useState<QuickFilterId>('all');
   const [lastSubmittedQuery, setLastSubmittedQuery] = useState('');
   const [showUndoSearch, setShowUndoSearch] = useState(false);
   const [recommendation, setRecommendation] = useState<RecommendationResponse | null>(null);
@@ -370,7 +381,7 @@ export default function MenuPage() {
         return;
       }
 
-      const response = await getRecommendationsByPrompt(restaurantId, query);
+      const response = await getRecommendationsByPrompt(restaurantId, query, tableId);
       showRecommendationResult(response);
     } catch (requestError: any) {
       if (products.length > 0) {
@@ -470,16 +481,38 @@ export default function MenuPage() {
   }
 
   const visibleProducts = useMemo(() => {
-    if (!activeCategoryId) {
-      return activeGroupCategories.flatMap((category) => category.products);
-    }
-
-    return products.filter(
+    const categoryScopedProducts = !activeCategoryId
+      ? activeGroupCategories.flatMap((category) => category.products)
+      : products.filter(
       (product) =>
         product.categoryId === activeCategoryId &&
         activeGroupCategories.some((category) => category.categoryId === product.categoryId),
     );
-  }, [activeCategoryId, activeGroupCategories, products]);
+
+    const normalizedSearch = normalizeMenuText(menuSearch.trim());
+
+    return categoryScopedProducts.filter((product) => {
+      const searchableText = normalizeMenuText(
+        `${product.name} ${product.description} ${product.categoryName} ${product.tags.join(' ')}`,
+      );
+
+      const matchesSearch = !normalizedSearch || searchableText.includes(normalizedSearch);
+      const matchesQuickFilter =
+        quickFilter === 'all' ||
+        (quickFilter === 'light' && searchableText.includes('hafif')) ||
+        (quickFilter === 'chicken' && searchableText.includes('tavuk')) ||
+        (quickFilter === 'drink' &&
+          ['icecek', 'kahve', 'limonata', 'soda', 'kola', 'mesrubat'].some((keyword) =>
+            searchableText.includes(keyword),
+          )) ||
+        (quickFilter === 'dessert' &&
+          ['tatli', 'pasta', 'waffle', 'cheesecake', 'dessert'].some((keyword) =>
+            searchableText.includes(keyword),
+          ));
+
+      return matchesSearch && matchesQuickFilter;
+    });
+  }, [activeCategoryId, activeGroupCategories, menuSearch, products, quickFilter]);
 
   return (
     <div>
@@ -726,6 +759,36 @@ export default function MenuPage() {
           />
 
           <section className="space-y-2">
+            <div className="space-y-2 rounded-[22px] bg-white p-3 shadow-sm shadow-stone-950/5">
+              <input
+                value={menuSearch}
+                onChange={(event) => setMenuSearch(event.target.value)}
+                placeholder="Menude ara"
+                className="w-full rounded-full border border-stone-200 bg-stone-50 px-4 py-3 text-sm font-semibold text-stone-900 outline-none placeholder:text-stone-400 focus:border-stone-400"
+              />
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {QUICK_FILTERS.map((filter) => {
+                  const isActive = quickFilter === filter.id;
+
+                  return (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      onClick={() => setQuickFilter(filter.id)}
+                      className={[
+                        'shrink-0 rounded-full px-3 py-2 text-xs font-bold transition active:scale-[0.98]',
+                        isActive
+                          ? 'bg-stone-950 text-white'
+                          : 'bg-stone-100 text-stone-600 hover:bg-stone-200',
+                      ].join(' ')}
+                    >
+                      {filter.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="flex items-center justify-between gap-4">
               <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-500">
                 Menu Listesi
@@ -736,7 +799,7 @@ export default function MenuPage() {
             </div>
 
             <div className="grid gap-2">
-              {visibleProducts.map((product) => (
+              {visibleProducts.length > 0 ? visibleProducts.map((product) => (
                 <ProductCard
                   key={product.productId}
                   product={product}
@@ -745,7 +808,12 @@ export default function MenuPage() {
                   onIncrement={handleQuickIncrement}
                   onDecrement={handleQuickDecrement}
                 />
-              ))}
+              )) : (
+                <EmptyState
+                  title="Urun bulunamadi"
+                  description="Arama veya filtreyi degistirerek tekrar deneyebilirsiniz."
+                />
+              )}
             </div>
           </section>
         </div>

@@ -1,20 +1,18 @@
-using System.Net.Http.Json;
 using System.Text.Json;
 using AiMenu.Api.DTOs;
-using AiMenu.Api.Options;
 using AiMenu.Api.Services.Interfaces;
-using Microsoft.Extensions.Options;
 
 namespace AiMenu.Api.Services;
 
-public class AiAssistantService(HttpClient httpClient, IOptions<OllamaOptions> options) : IAiAssistantService
+public class AiAssistantService(IAiTextGenerationService aiTextGenerationService) : IAiAssistantService
 {
     private const int SuggestedProductLimit = 4;
-    private readonly OllamaOptions ollamaOptions = options.Value;
 
     public async Task<AiMessageResponseDto> ReplyAsync(
         string message,
         AiMenuContextDto menuContext,
+        IReadOnlyCollection<AiConversationTurnDto> conversationHistory,
+        bool allowProductSuggestions,
         CancellationToken cancellationToken = default)
     {
         if (menuContext.Products.Count == 0)
@@ -29,32 +27,27 @@ public class AiAssistantService(HttpClient httpClient, IOptions<OllamaOptions> o
 
         try
         {
-            var request = new OllamaGenerateRequest
-            {
-                Model = ollamaOptions.Model,
-                Stream = false,
-                Prompt = BuildAssistantPrompt(message, menuContext)
-            };
+            var rawContent = await aiTextGenerationService.GenerateAsync(
+                BuildAssistantPrompt(message, menuContext, conversationHistory, allowProductSuggestions),
+                cancellationToken);
+            var modelResponse = ParseAssistantResponse(rawContent);
+            var suggestedProducts = allowProductSuggestions
+                ? ResolveSuggestedProducts(modelResponse, menuContext)
+                : Array.Empty<AiSuggestedProductDto>();
 
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds)));
-
-            var response = await httpClient.PostAsJsonAsync("/api/generate", request, timeoutCts.Token);
-            response.EnsureSuccessStatusCode();
-
-            var payload = await response.Content.ReadFromJsonAsync<OllamaGenerateResponse>(cancellationToken: timeoutCts.Token);
-            var modelResponse = ParseAssistantResponse(payload?.Response ?? string.Empty);
-            var suggestedProducts = ResolveSuggestedProducts(modelResponse, menuContext);
-            suggestedProducts = MergeSuggestions(FindRelevantProducts(message, menuContext), suggestedProducts);
-            suggestedProducts = ApplyQuestionScope(message, suggestedProducts, menuContext);
-            if (IsCartGuidanceRequest(Normalize(message)))
+            if (allowProductSuggestions)
             {
                 suggestedProducts = MergeSuggestions(FindRelevantProducts(message, menuContext), suggestedProducts);
-            }
+                suggestedProducts = ApplyQuestionScope(message, suggestedProducts, menuContext);
+                if (IsCartGuidanceRequest(Normalize(message)))
+                {
+                    suggestedProducts = MergeSuggestions(FindRelevantProducts(message, menuContext), suggestedProducts);
+                }
 
-            if (suggestedProducts.Count == 0)
-            {
-                suggestedProducts = FindRelevantProducts(message, menuContext);
+                if (suggestedProducts.Count == 0)
+                {
+                    suggestedProducts = FindRelevantProducts(message, menuContext);
+                }
             }
 
             return new AiMessageResponseDto
@@ -66,7 +59,10 @@ public class AiAssistantService(HttpClient httpClient, IOptions<OllamaOptions> o
         }
         catch
         {
-            var suggestedProducts = FindRelevantProducts(message, menuContext);
+            var suggestedProducts = allowProductSuggestions
+                ? FindRelevantProducts(message, menuContext)
+                : Array.Empty<AiSuggestedProductDto>();
+
             return new AiMessageResponseDto
             {
                 Intent = AiMessageIntent.MenuRelated.ToResponseValue(),
@@ -98,7 +94,11 @@ public class AiAssistantService(HttpClient httpClient, IOptions<OllamaOptions> o
                     : modelReply.Trim();
     }
 
-    private static string BuildAssistantPrompt(string message, AiMenuContextDto menuContext)
+    private static string BuildAssistantPrompt(
+        string message,
+        AiMenuContextDto menuContext,
+        IReadOnlyCollection<AiConversationTurnDto> conversationHistory,
+        bool allowProductSuggestions)
     {
         return
             """
@@ -110,6 +110,12 @@ public class AiAssistantService(HttpClient httpClient, IOptions<OllamaOptions> o
             Siparis olusturma.
             Sepete urun ekleme.
             Kullanici siparis vermek isterse onu urunu manuel olarak sepete eklemeye yonlendir.
+            Kullanici sadece tesekkur, tamam, vedalasma veya kisa sosyal cevap veriyorsa urun onerme; sadece kisa ve dogal cevap ver.
+            Emin olmadigin durumda suggestedProductIds ve suggestedProductNames alanlarini bos birak.
+            Backend net urun eslesmesi bulamadiysa urun onerme; kullaniciya daha net tercih sor.
+            Urun onerme izni:
+            """ + (allowProductSuggestions ? "var" : "yok") + Environment.NewLine +
+            """
 
             Kullanicinin asil sorusunu anla:
             - Eger bilgi soruyorsa, once bilgi ver.
@@ -133,6 +139,10 @@ public class AiAssistantService(HttpClient httpClient, IOptions<OllamaOptions> o
 
             Aktif menu context:
             """ + Environment.NewLine + BuildMenuContextText(menuContext) + Environment.NewLine +
+            """
+
+            Son konusma gecmisi:
+            """ + Environment.NewLine + BuildConversationHistoryText(conversationHistory) + Environment.NewLine +
             """
 
             Kullanici mesaji:
@@ -178,6 +188,20 @@ public class AiAssistantService(HttpClient httpClient, IOptions<OllamaOptions> o
 
             return "- " + string.Join(" | ", details);
         });
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private static string BuildConversationHistoryText(IReadOnlyCollection<AiConversationTurnDto> conversationHistory)
+    {
+        if (conversationHistory.Count == 0)
+        {
+            return "- gecmis yok";
+        }
+
+        var lines = conversationHistory
+            .TakeLast(4)
+            .Select(turn => "- kullanici=" + turn.UserMessage + " | asistan=" + turn.AssistantReply);
 
         return string.Join(Environment.NewLine, lines);
     }
@@ -437,17 +461,5 @@ public class AiAssistantService(HttpClient httpClient, IOptions<OllamaOptions> o
         var start = rawContent.IndexOf('{');
         var end = rawContent.LastIndexOf('}');
         return start >= 0 && end > start ? rawContent[start..(end + 1)] : string.Empty;
-    }
-
-    private sealed class OllamaGenerateRequest
-    {
-        public string Model { get; set; } = string.Empty;
-        public string Prompt { get; set; } = string.Empty;
-        public bool Stream { get; set; }
-    }
-
-    private sealed class OllamaGenerateResponse
-    {
-        public string Response { get; set; } = string.Empty;
     }
 }
