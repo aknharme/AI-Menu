@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import InlineAlert from './InlineAlert';
 import { useCart } from '../contexts/CartContext';
 import { createOrder } from '../services/orderService';
+import { saveActiveCustomerOrder } from '../services/customerOrderStateService';
 import type { OrderResponse } from '../types/order';
 import { formatPrice } from '../utils/formatPrice';
 import { extractApiErrorMessage } from '../utils/apiError';
@@ -11,6 +12,7 @@ type CartDrawerProps = {
   restaurantId?: string;
   tableId?: string;
   onClose: () => void;
+  onOrderCreated: (order: OrderResponse) => void;
 };
 
 export default function CartDrawer({
@@ -18,6 +20,7 @@ export default function CartDrawer({
   restaurantId,
   tableId,
   onClose,
+  onOrderCreated,
 }: CartDrawerProps) {
   const {
     cartItems,
@@ -31,7 +34,6 @@ export default function CartDrawer({
   const [orderNote, setOrderNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [createdOrder, setCreatedOrder] = useState<OrderResponse | null>(null);
 
   const canSubmit = useMemo(
     () => Boolean(restaurantId && tableId && cartItems.length > 0 && !submitting),
@@ -76,7 +78,8 @@ export default function CartDrawer({
         })),
       });
 
-      setCreatedOrder(order);
+      saveActiveCustomerOrder(restaurantId, tableId, order.orderId);
+      onOrderCreated(order);
       clearCart();
       setCustomerName('');
       setOrderNote('');
@@ -119,18 +122,6 @@ export default function CartDrawer({
           {!tableId && (
             <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               Sipariş gönderebilmek için masaya özel QR bağlantısından gelmen gerekiyor.
-            </div>
-          )}
-
-          {createdOrder && (
-            <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-700">
-                Sipariş Alındı
-              </p>
-              <h3 className="mt-2 text-lg font-semibold">Sipariş numarası: {createdOrder.orderId}</h3>
-              <p className="mt-2 text-sm">
-                Durum: {createdOrder.status} | Toplam: {formatPrice(createdOrder.totalAmount)}
-              </p>
             </div>
           )}
 

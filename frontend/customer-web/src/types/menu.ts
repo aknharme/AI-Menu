@@ -13,9 +13,11 @@ export type ProductListItem = {
 
 export type MenuCategory = {
   categoryId: string;
+  parentCategoryId?: string | null;
   name: string;
   displayOrder: number;
   products: ProductListItem[];
+  subCategories?: MenuCategory[];
 };
 
 export type MenuResponse = {

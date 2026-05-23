@@ -309,8 +309,41 @@ const DEMO_MENU: MenuResponse = {
   ],
 };
 
+function buildDemoMainCategory(
+  categoryId: string,
+  name: string,
+  displayOrder: number,
+  subCategoryIds: string[],
+) {
+  const subCategories = DEMO_MENU.categories
+    .filter((category) => subCategoryIds.includes(category.categoryId))
+    .map((category) => ({
+      ...category,
+      parentCategoryId: categoryId,
+    }));
+
+  return {
+    categoryId,
+    name,
+    displayOrder,
+    products: [],
+    subCategories,
+  };
+}
+
 function getActiveDemoCategories() {
-  return DEMO_MENU.categories.filter((category) => category.products.length > 0);
+  return [
+    buildDemoMainCategory('demo-main-dessert', 'Tatlı', 1, ['demo-waffle', 'demo-cake']),
+    buildDemoMainCategory('demo-main-drink', 'İçecek', 2, ['demo-coffee', 'demo-cold-drink']),
+    buildDemoMainCategory('demo-main-food', 'Yemek', 3, ['demo-burger', 'demo-salad']),
+  ];
+}
+
+function flattenCategoryProducts(categories: MenuCategory[]): ProductListItem[] {
+  return categories.flatMap((category) => [
+    ...category.products,
+    ...(category.subCategories ? flattenCategoryProducts(category.subCategories) : []),
+  ]);
 }
 
 function buildDemoDetail(product: ProductListItem): ProductDetail {
@@ -350,7 +383,7 @@ export function useMenu({ restaurantId }: UseMenuOptions) {
         setError(null);
         setMenu(DEMO_MENU);
         setCategories(demoCategories);
-        setProducts(demoCategories.flatMap((category) => category.products));
+        setProducts(flattenCategoryProducts(demoCategories));
         return;
       }
 
@@ -363,11 +396,9 @@ export function useMenu({ restaurantId }: UseMenuOptions) {
           return;
         }
 
-        const activeCategories = data.categories.filter((category) => category.products.length > 0);
-
         setMenu(data);
-        setCategories(activeCategories);
-        setProducts(activeCategories.flatMap((category) => category.products));
+        setCategories(data.categories);
+        setProducts(flattenCategoryProducts(data.categories));
       } catch {
         if (!isMounted) {
           return;
@@ -377,7 +408,7 @@ export function useMenu({ restaurantId }: UseMenuOptions) {
         setError(null);
         setMenu(DEMO_MENU);
         setCategories(demoCategories);
-        setProducts(demoCategories.flatMap((category) => category.products));
+        setProducts(flattenCategoryProducts(demoCategories));
       } finally {
         if (isMounted) {
           setLoading(false);

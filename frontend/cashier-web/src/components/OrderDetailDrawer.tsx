@@ -10,9 +10,11 @@ type OrderDetailDrawerProps = {
 
 const statusLabels: Record<string, string> = {
   Pending: 'Bekliyor',
-  Preparing: 'Hazirlaniyor',
-  Ready: 'Hazir',
-  Paid: 'Odendi',
+  Preparing: 'Hazırlanıyor',
+  Ready: 'Teslim',
+  Paid: 'Ödeme Alındı',
+  Cancelled: 'İptal',
+  Refunded: 'İade',
 };
 
 function formatPrice(value: number) {

@@ -4,6 +4,7 @@ import AdminLayout from '../layouts/AdminLayout';
 import CategoriesPage from '../pages/CategoriesPage';
 import DashboardPage from '../pages/DashboardPage';
 import LoginPage from '../pages/LoginPage';
+import OrderLogsPage from '../pages/OrderLogsPage';
 import ProductsPage from '../pages/ProductsPage';
 import TablesPage from '../pages/TablesPage';
 
@@ -37,6 +38,10 @@ export const router = createBrowserRouter(
             {
               path: 'tables',
               element: <TablesPage />,
+            },
+            {
+              path: 'order-logs',
+              element: <OrderLogsPage />,
             },
           ],
         },

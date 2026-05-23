@@ -12,6 +12,7 @@ export default function AdminLayout() {
     { label: 'Kategoriler', path: '/categories' },
     { label: 'Ürünler', path: '/products' },
     { label: 'Masalar', path: '/tables' },
+    { label: 'Sipariş Logları', path: '/order-logs' },
   ];
 
   function handleLogout() {
