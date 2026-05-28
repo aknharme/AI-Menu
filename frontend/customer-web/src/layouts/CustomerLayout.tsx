@@ -14,6 +14,19 @@ import {
 } from '../services/customerOrderStateService';
 import type { OrderResponse } from '../types/order';
 import { formatPrice } from '../utils/formatPrice';
+import {
+  getActiveOrderStorageEventName,
+  getStoredActiveOrder,
+  type StoredActiveOrder,
+} from '../utils/activeOrderStorage';
+
+const customerStatusLabels: Record<string, string> = {
+  Pending: 'Bekliyor',
+  Preparing: 'Onaylandi',
+  Ready: 'Hazirlaniyor',
+  Paid: 'Teslim edildi',
+  Cancelled: 'Iptal edildi',
+};
 
 const orderStatusLabels: Record<string, string> = {
   Pending: 'Bekliyor',
@@ -54,6 +67,100 @@ export default function CustomerLayout() {
     if (!restaurantId || !tableId) {
       setActiveOrder(null);
       setIsOrderStatusOpen(false);
+  const [activeOrder, setActiveOrder] = useState<StoredActiveOrder | null>(null);
+  const containerRef = useRef<HTMLElement | null>(null);
+  const cartRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef({
+    isDragging: false,
+    hasMoved: false,
+    pointerId: 0,
+    startX: 0,
+    startY: 0,
+    originX: 0,
+    originY: 0,
+  });
+  const suppressClickRef = useRef(false);
+  const [cartPosition, setCartPosition] = useState({ x: 0, y: 0 });
+
+  const getCartBounds = useCallback(() => {
+    const container = containerRef.current;
+    const cart = cartRef.current;
+    const containerRect = container?.getBoundingClientRect();
+    const cartRect = cart?.getBoundingClientRect();
+    const heroBoundary = container?.querySelector<HTMLElement>('[data-cart-drag-top="true"]');
+    const heroBottom = heroBoundary?.getBoundingClientRect().top ?? 0;
+    const padding = 12;
+    const footerHeight = 28;
+    const cartWidth = cartRect?.width ?? 175;
+    const cartHeight = cartRect?.height ?? 48;
+
+    return {
+      minX: (containerRect?.left ?? 0) + padding,
+      maxX: (containerRect?.right ?? window.innerWidth) - cartWidth - padding,
+      minY: Math.max(heroBottom + padding, padding),
+      maxY: window.innerHeight - footerHeight - cartHeight - padding,
+    };
+  }, []);
+
+  const clampCartPosition = useCallback((position: { x: number; y: number }) => {
+    const bounds = getCartBounds();
+    const minX = Math.min(bounds.minX, bounds.maxX);
+    const maxX = Math.max(bounds.minX, bounds.maxX);
+    const minY = Math.min(bounds.minY, bounds.maxY);
+    const maxY = Math.max(bounds.minY, bounds.maxY);
+
+    return {
+      x: Math.min(Math.max(position.x, minX), maxX),
+      y: Math.min(Math.max(position.y, minY), maxY),
+    };
+  }, [getCartBounds]);
+
+  const placeCartAtStart = useCallback(() => {
+    const bounds = getCartBounds();
+    setCartPosition(clampCartPosition({ x: bounds.maxX, y: bounds.maxY }));
+  }, [clampCartPosition, getCartBounds]);
+
+  useEffect(() => {
+    placeCartAtStart();
+    window.addEventListener('resize', placeCartAtStart);
+
+    return () => {
+      window.removeEventListener('resize', placeCartAtStart);
+    };
+  }, [placeCartAtStart]);
+
+  useEffect(() => {
+    function syncActiveOrder() {
+      setActiveOrder(getStoredActiveOrder(restaurantId, tableId));
+    }
+
+    syncActiveOrder();
+    window.addEventListener('storage', syncActiveOrder);
+    window.addEventListener(getActiveOrderStorageEventName(), syncActiveOrder);
+
+    return () => {
+      window.removeEventListener('storage', syncActiveOrder);
+      window.removeEventListener(getActiveOrderStorageEventName(), syncActiveOrder);
+    };
+  }, [restaurantId, tableId]);
+
+  function handleCartPointerDown(event: PointerEvent<HTMLDivElement>) {
+    const currentPosition = clampCartPosition(cartPosition);
+    dragStateRef.current = {
+      isDragging: true,
+      hasMoved: false,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: currentPosition.x,
+      originY: currentPosition.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }
+
+  function handleCartPointerMove(event: PointerEvent<HTMLDivElement>) {
+    const dragState = dragStateRef.current;
+    if (!dragState.isDragging || dragState.pointerId !== event.pointerId) {
       return;
     }
 
@@ -98,6 +205,23 @@ export default function CustomerLayout() {
 
     void syncActiveOrder();
     const syncTimer = window.setInterval(() => void syncActiveOrder(), 3000);
+    setCartPosition(clampCartPosition({
+      x: dragState.originX + deltaX,
+      y: dragState.originY + deltaY,
+    }));
+  }
+
+  function handleCartPointerUp(event: PointerEvent<HTMLDivElement>) {
+    const dragState = dragStateRef.current;
+    if (dragState.pointerId === event.pointerId) {
+      if (!dragState.hasMoved) {
+        setIsCartOpen(true);
+      }
+
+      suppressClickRef.current = dragState.hasMoved;
+      dragStateRef.current.isDragging = false;
+    }
+  }
 
     function handleStorageChange(event: StorageEvent) {
       if (event.key === CUSTOMER_ACTIVE_ORDER_KEY || event.key === ORDER_STATUS_OVERRIDE_KEY) {
@@ -113,6 +237,15 @@ export default function CustomerLayout() {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, [restaurantId, tableId]);
+
+  const hasActiveOrder = Boolean(activeOrder && itemCount === 0);
+  const buttonLabel = hasActiveOrder ? 'Siparisim' : 'Sepet';
+  const buttonSummary = hasActiveOrder
+    ? customerStatusLabels[activeOrder?.status ?? ''] ?? activeOrder?.status ?? 'Takip et'
+    : `${itemCount} ürün`;
+  const buttonPriceLabel = hasActiveOrder
+    ? formatPrice(activeOrder?.totalAmount ?? 0)
+    : formatPrice(totalPrice);
 
   return (
     <div className="min-h-screen bg-stone-100">
@@ -160,6 +293,10 @@ export default function CustomerLayout() {
             itemCount={itemCount}
             totalPriceLabel={formatPrice(totalPrice)}
             onClick={() => setIsCartOpen(true)}
+            totalPriceLabel={buttonPriceLabel}
+            label={buttonLabel}
+            summary={buttonSummary}
+            onClick={handleCartClick}
           />
         </div>
       </div>

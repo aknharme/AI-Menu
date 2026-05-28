@@ -36,7 +36,7 @@ npm run dev -- --host 127.0.0.1 --port 5175
 Her uygulama kendi `.env` dosyasından API adresini okur.
 
 ```env
-VITE_API_BASE_URL=http://localhost:5000/api
+VITE_API_BASE_URL=http://localhost:5268/api
 ```
 
 `.env.example` dosyası örnek olarak tutulur. Gerçek geliştirme ortamında aynı klasöre `.env` dosyası açılabilir.

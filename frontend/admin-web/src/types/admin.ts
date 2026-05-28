@@ -32,6 +32,7 @@ export type AdminProduct = {
   price: number;
   description: string;
   content: string;
+  tags: string[];
   isActive: boolean;
 };
 
@@ -43,6 +44,7 @@ export type SaveAdminProductRequest = {
   price: number;
   description: string;
   content: string;
+  tags: string[];
   isActive: boolean;
 };
 
@@ -109,6 +111,23 @@ export type OrderStatusLog = {
   newStatus: string;
   changedByUserId: string | null;
   changedAt: string;
+export type AdminOrderStatus =
+  | 'Pending'
+  | 'Preparing'
+  | 'Ready'
+  | 'Paid'
+  | 'Cancelled'
+  | string;
+
+export type AdminOrderListItem = {
+  orderId: string;
+  restaurantId: string;
+  tableId: string;
+  tableName: string;
+  status: AdminOrderStatus;
+  createdAtUtc: string;
+  totalAmount: number;
+  itemCount: number;
 };
 
 export type AdminOrderItem = {
@@ -130,7 +149,25 @@ export type AdminOrderDetail = {
   customerName: string;
   note: string;
   status: string;
+  status: AdminOrderStatus;
   createdAtUtc: string;
   totalAmount: number;
   items: AdminOrderItem[];
+};
+
+export type AdminAiGroundedProduct = {
+  productId: string;
+  name: string;
+  categoryName: string;
+  price: number;
+  description: string;
+  tags: string[];
+};
+
+export type AdminAiTestResponse = {
+  intent: string;
+  queryType: string;
+  hasSpecificGrounding: boolean;
+  reply: string;
+  groundedProducts: AdminAiGroundedProduct[];
 };

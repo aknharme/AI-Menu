@@ -9,12 +9,6 @@ public static class AppDbSeeder
 {
     public static async Task SeedAsync(AppDbContext dbContext)
     {
-        // Veri varsa yeniden ekleme yapmayiz; seed islemi idempotent kalir.
-        if (await dbContext.Restaurants.AnyAsync())
-        {
-            return;
-        }
-
         // Sabit Guid'ler smoke test ve ekip ici demo adimlarinda ayni kayitlara erisebilmek icin sabit tutulur.
         var restaurantId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
@@ -601,21 +595,200 @@ public static class AppDbSeeder
             }
         };
 
-        await dbContext.Restaurants.AddAsync(restaurant);
-        await dbContext.Users.AddRangeAsync(adminUser, cashierUser);
-        await dbContext.Categories.AddRangeAsync(categories);
-        await dbContext.Products.AddRangeAsync(products);
-        await dbContext.Tags.AddRangeAsync(tags);
-        await dbContext.ProductTags.AddRangeAsync(productTags);
-        await dbContext.ProductAllergens.AddRangeAsync(productAllergens);
-        await dbContext.ProductVariants.AddRangeAsync(productVariants);
-        await dbContext.Tables.AddRangeAsync(tables);
-        await dbContext.Orders.AddRangeAsync(orders);
-        await dbContext.OrderItems.AddRangeAsync(orderItems);
-        await dbContext.OrderStatusLogs.AddRangeAsync(orderStatusLogs);
-        await dbContext.RecommendationLogs.AddRangeAsync(recommendationLogs);
-        await dbContext.AuditLogs.AddRangeAsync(auditLogs);
-        await dbContext.SaveChangesAsync();
+        // Seed her acilista calisabilir; mevcut kayitlari atlayip sadece eksikleri tamamlar.
+        var existingRestaurantIds = await dbContext.Restaurants
+            .AsNoTracking()
+            .Select(currentRestaurant => currentRestaurant.RestaurantId)
+            .ToHashSetAsync();
+        var existingRestaurantSlugs = await dbContext.Restaurants
+            .AsNoTracking()
+            .Select(currentRestaurant => currentRestaurant.Slug)
+            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase);
+
+        if (!existingRestaurantIds.Contains(restaurant.RestaurantId) &&
+            !existingRestaurantSlugs.Contains(restaurant.Slug))
+        {
+            await dbContext.Restaurants.AddAsync(restaurant);
+        }
+
+        var existingUserIds = await dbContext.Users
+            .AsNoTracking()
+            .Select(user => user.UserId)
+            .ToHashSetAsync();
+        var existingUserEmails = await dbContext.Users
+            .AsNoTracking()
+            .Select(user => user.Email)
+            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase);
+
+        var usersToAdd = new[] { adminUser, cashierUser }
+            .Where(user => !existingUserIds.Contains(user.UserId) && !existingUserEmails.Contains(user.Email))
+            .ToList();
+        if (usersToAdd.Count > 0)
+        {
+            await dbContext.Users.AddRangeAsync(usersToAdd);
+        }
+
+        var existingCategoryIds = await dbContext.Categories
+            .AsNoTracking()
+            .Select(category => category.CategoryId)
+            .ToHashSetAsync();
+        var categoriesToAdd = categories
+            .Where(category => !existingCategoryIds.Contains(category.CategoryId))
+            .ToList();
+        if (categoriesToAdd.Count > 0)
+        {
+            await dbContext.Categories.AddRangeAsync(categoriesToAdd);
+        }
+
+        var existingProductIds = await dbContext.Products
+            .AsNoTracking()
+            .Select(product => product.ProductId)
+            .ToHashSetAsync();
+        var productsToAdd = products
+            .Where(product => !existingProductIds.Contains(product.ProductId))
+            .ToList();
+        if (productsToAdd.Count > 0)
+        {
+            await dbContext.Products.AddRangeAsync(productsToAdd);
+        }
+
+        var existingTagIds = await dbContext.Tags
+            .AsNoTracking()
+            .Select(tag => tag.TagId)
+            .ToHashSetAsync();
+        var existingTagKeys = await dbContext.Tags
+            .AsNoTracking()
+            .Where(tag => tag.RestaurantId == restaurantId)
+            .Select(tag => $"{tag.RestaurantId}:{tag.NormalizedName}")
+            .ToHashSetAsync(StringComparer.OrdinalIgnoreCase);
+        var tagsToAdd = tags
+            .Where(tag =>
+                !existingTagIds.Contains(tag.TagId) &&
+                !existingTagKeys.Contains($"{tag.RestaurantId}:{tag.NormalizedName}"))
+            .ToList();
+        if (tagsToAdd.Count > 0)
+        {
+            await dbContext.Tags.AddRangeAsync(tagsToAdd);
+        }
+
+        var existingProductTagIds = await dbContext.ProductTags
+            .AsNoTracking()
+            .Select(productTag => productTag.ProductTagId)
+            .ToHashSetAsync();
+        var existingProductTagPairs = await dbContext.ProductTags
+            .AsNoTracking()
+            .Select(productTag => $"{productTag.ProductId}:{productTag.TagId}")
+            .ToHashSetAsync();
+        var productTagsToAdd = productTags
+            .Where(productTag =>
+                !existingProductTagIds.Contains(productTag.ProductTagId) &&
+                !existingProductTagPairs.Contains($"{productTag.ProductId}:{productTag.TagId}"))
+            .ToList();
+        if (productTagsToAdd.Count > 0)
+        {
+            await dbContext.ProductTags.AddRangeAsync(productTagsToAdd);
+        }
+
+        var existingAllergenIds = await dbContext.ProductAllergens
+            .AsNoTracking()
+            .Select(productAllergen => productAllergen.ProductAllergenId)
+            .ToHashSetAsync();
+        var allergensToAdd = productAllergens
+            .Where(productAllergen => !existingAllergenIds.Contains(productAllergen.ProductAllergenId))
+            .ToList();
+        if (allergensToAdd.Count > 0)
+        {
+            await dbContext.ProductAllergens.AddRangeAsync(allergensToAdd);
+        }
+
+        var existingVariantIds = await dbContext.ProductVariants
+            .AsNoTracking()
+            .Select(productVariant => productVariant.ProductVariantId)
+            .ToHashSetAsync();
+        var variantsToAdd = productVariants
+            .Where(productVariant => !existingVariantIds.Contains(productVariant.ProductVariantId))
+            .ToList();
+        if (variantsToAdd.Count > 0)
+        {
+            await dbContext.ProductVariants.AddRangeAsync(variantsToAdd);
+        }
+
+        var existingTableIds = await dbContext.Tables
+            .AsNoTracking()
+            .Select(table => table.TableId)
+            .ToHashSetAsync();
+        var tablesToAdd = tables
+            .Where(table => !existingTableIds.Contains(table.TableId))
+            .ToList();
+        if (tablesToAdd.Count > 0)
+        {
+            await dbContext.Tables.AddRangeAsync(tablesToAdd);
+        }
+
+        var existingOrderIds = await dbContext.Orders
+            .AsNoTracking()
+            .Select(order => order.OrderId)
+            .ToHashSetAsync();
+        var ordersToAdd = orders
+            .Where(order => !existingOrderIds.Contains(order.OrderId))
+            .ToList();
+        if (ordersToAdd.Count > 0)
+        {
+            await dbContext.Orders.AddRangeAsync(ordersToAdd);
+        }
+
+        var existingOrderItemIds = await dbContext.OrderItems
+            .AsNoTracking()
+            .Select(orderItem => orderItem.OrderItemId)
+            .ToHashSetAsync();
+        var orderItemsToAdd = orderItems
+            .Where(orderItem => !existingOrderItemIds.Contains(orderItem.OrderItemId))
+            .ToList();
+        if (orderItemsToAdd.Count > 0)
+        {
+            await dbContext.OrderItems.AddRangeAsync(orderItemsToAdd);
+        }
+
+        var existingOrderStatusLogIds = await dbContext.OrderStatusLogs
+            .AsNoTracking()
+            .Select(orderStatusLog => orderStatusLog.OrderStatusLogId)
+            .ToHashSetAsync();
+        var orderStatusLogsToAdd = orderStatusLogs
+            .Where(orderStatusLog => !existingOrderStatusLogIds.Contains(orderStatusLog.OrderStatusLogId))
+            .ToList();
+        if (orderStatusLogsToAdd.Count > 0)
+        {
+            await dbContext.OrderStatusLogs.AddRangeAsync(orderStatusLogsToAdd);
+        }
+
+        var existingRecommendationLogIds = await dbContext.RecommendationLogs
+            .AsNoTracking()
+            .Select(recommendationLog => recommendationLog.RecommendationLogId)
+            .ToHashSetAsync();
+        var recommendationLogsToAdd = recommendationLogs
+            .Where(recommendationLog => !existingRecommendationLogIds.Contains(recommendationLog.RecommendationLogId))
+            .ToList();
+        if (recommendationLogsToAdd.Count > 0)
+        {
+            await dbContext.RecommendationLogs.AddRangeAsync(recommendationLogsToAdd);
+        }
+
+        var existingAuditLogIds = await dbContext.AuditLogs
+            .AsNoTracking()
+            .Select(auditLog => auditLog.AuditLogId)
+            .ToHashSetAsync();
+        var auditLogsToAdd = auditLogs
+            .Where(auditLog => !existingAuditLogIds.Contains(auditLog.AuditLogId))
+            .ToList();
+        if (auditLogsToAdd.Count > 0)
+        {
+            await dbContext.AuditLogs.AddRangeAsync(auditLogsToAdd);
+        }
+
+        if (dbContext.ChangeTracker.HasChanges())
+        {
+            await dbContext.SaveChangesAsync();
+        }
     }
 
     // QR degeri, customer uygulamasinin restaurant ve masa baglamini tek baglantida yakalayabilmesi icin uretilir.

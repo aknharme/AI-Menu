@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { ProductDetail, ProductListItem } from '../types/menu';
 import type { AddToCartInput } from '../types/order';
 import { formatPrice } from '../utils/formatPrice';
+import { formatTableLabel } from '../utils/formatTableLabel';
 
 type ProductDetailDrawerProps = {
   isOpen: boolean;
@@ -113,7 +114,7 @@ export default function ProductDetailDrawer({
                   </p>
                   {tableId && (
                     <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
-                      Masa {tableId}
+                      {formatTableLabel(tableId)}
                     </span>
                   )}
                 </div>
@@ -201,24 +202,6 @@ export default function ProductDetailDrawer({
                   <p className="text-sm text-stone-500">Bu urun icin varyant bulunmuyor.</p>
                 )}
               </section>
-
-              {detail.tags.length > 0 && (
-                <section className="space-y-3">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
-                    Etiketler
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {detail.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                </section>
-              )}
 
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">

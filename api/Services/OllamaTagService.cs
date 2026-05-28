@@ -1,15 +1,10 @@
-using System.Net.Http.Json;
 using System.Text.Json;
-using AiMenu.Api.Options;
 using AiMenu.Api.Services.Interfaces;
-using Microsoft.Extensions.Options;
 
 namespace AiMenu.Api.Services;
 
-public class OllamaTagService(HttpClient httpClient, IOptions<OllamaOptions> options) : IAiTagService
+public class OllamaTagService(IAiTextGenerationService aiTextGenerationService) : IAiTagService
 {
-    private readonly OllamaOptions ollamaOptions = options.Value;
-
     public async Task<IReadOnlyCollection<string>> GenerateTagsAsync(string prompt, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(prompt))
@@ -17,23 +12,7 @@ public class OllamaTagService(HttpClient httpClient, IOptions<OllamaOptions> opt
             return Array.Empty<string>();
         }
 
-        // AI'nin rolu yalnizca kisa ve normalize edilebilir tag listesi uretmekle sinirli tutulur.
-        var request = new OllamaGenerateRequest
-        {
-            Model = ollamaOptions.Model,
-            Stream = false,
-            Prompt = BuildPrompt(prompt)
-        };
-
-        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeoutCts.CancelAfter(TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds)));
-
-        var response = await httpClient.PostAsJsonAsync("/api/generate", request, timeoutCts.Token);
-        response.EnsureSuccessStatusCode();
-
-        var payload = await response.Content.ReadFromJsonAsync<OllamaGenerateResponse>(cancellationToken: timeoutCts.Token);
-        var rawContent = payload?.Response ?? string.Empty;
-
+        var rawContent = await aiTextGenerationService.GenerateAsync(BuildPrompt(prompt), cancellationToken);
         return ExtractTags(rawContent);
     }
 
@@ -87,19 +66,5 @@ public class OllamaTagService(HttpClient httpClient, IOptions<OllamaOptions> opt
             .Where(token => !string.Equals(token, "tags", StringComparison.OrdinalIgnoreCase));
 
         return TagNormalizer.NormalizeMany(extractedTags);
-    }
-
-    // Ollama request modeli stream kapali tek cevap almak icin yeterli alanlari tasir.
-    private sealed class OllamaGenerateRequest
-    {
-        public string Model { get; set; } = string.Empty;
-        public string Prompt { get; set; } = string.Empty;
-        public bool Stream { get; set; }
-    }
-
-    // Ollama response modeli generate endpoint'inin text cevabini okumak icin kullanilir.
-    private sealed class OllamaGenerateResponse
-    {
-        public string Response { get; set; } = string.Empty;
     }
 }
