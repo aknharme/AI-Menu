@@ -6,6 +6,7 @@ import AccountingPage from '../pages/AccountingPage';
 import CategoriesPage from '../pages/CategoriesPage';
 import DashboardPage from '../pages/DashboardPage';
 import LoginPage from '../pages/LoginPage';
+import OrderLogsPage from '../pages/OrderLogsPage';
 import OrdersPage from '../pages/OrdersPage';
 import ProductsPage from '../pages/ProductsPage';
 import TablesPage from '../pages/TablesPage';
@@ -50,6 +51,8 @@ export const router = createBrowserRouter(
               element: <TablesPage />,
             },
             {
+              path: 'order-logs',
+              element: <OrderLogsPage />,
               path: 'ai-test',
               element: <AiTestPage />,
             },

@@ -8,6 +8,7 @@ import type {
   RecommendationStat,
   RecentOrder,
   AdminTable,
+  OrderStatusLog,
   SaveAdminCategoryRequest,
   SaveAdminProductRequest,
   SaveAdminTableRequest,
@@ -104,6 +105,15 @@ export async function getRecentOrders(restaurantId: string, date?: string) {
   return response.data;
 }
 
+export async function getOrderStatusLogs(restaurantId: string) {
+  const response = await api.get<OrderStatusLog[]>(`/admin/logs/orders/${restaurantId}`);
+  return response.data;
+}
+
+export async function getOrderDetail(restaurantId: string, orderId: string) {
+  const response = await api.get<AdminOrderDetail>(`/cashier/orders/${restaurantId}/${orderId}`);
+  return response.data;
+}
 export async function getAdminOrders(restaurantId: string) {
   const response = await api.get<AdminOrderListItem[]>(`/cashier/orders/${restaurantId}`);
   return response.data;

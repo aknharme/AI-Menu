@@ -2,14 +2,19 @@
 export type AdminCategory = {
   categoryId: string;
   restaurantId: string;
+  parentCategoryId: string | null;
+  parentCategoryName: string;
   name: string;
   displayOrder: number;
   isActive: boolean;
+  subCategoryCount: number;
+  productCount: number;
 };
 
 // SaveAdminCategoryRequest, kategori create ve update isteklerinde kullanilir.
 export type SaveAdminCategoryRequest = {
   restaurantId: string;
+  parentCategoryId?: string | null;
   name: string;
   displayOrder: number;
   isActive: boolean;
@@ -21,6 +26,8 @@ export type AdminProduct = {
   restaurantId: string;
   categoryId: string;
   categoryName: string;
+  parentCategoryId: string | null;
+  parentCategoryName: string;
   name: string;
   price: number;
   description: string;
@@ -93,6 +100,17 @@ export type RecommendationStat = {
   recommendationCount: number;
 };
 
+// OrderStatusLog, admin panelde siparis durum gecmisini gosteren API modelidir.
+export type OrderStatusLog = {
+  id: string;
+  restaurantId: string;
+  orderId: string;
+  tableName: string;
+  orderTotalAmount: number;
+  oldStatus: string | null;
+  newStatus: string;
+  changedByUserId: string | null;
+  changedAt: string;
 export type AdminOrderStatus =
   | 'Pending'
   | 'Preparing'
@@ -130,6 +148,7 @@ export type AdminOrderDetail = {
   tableName: string;
   customerName: string;
   note: string;
+  status: string;
   status: AdminOrderStatus;
   createdAtUtc: string;
   totalAmount: number;

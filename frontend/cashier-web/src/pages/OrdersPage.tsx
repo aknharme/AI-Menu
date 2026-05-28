@@ -17,6 +17,13 @@ export default function OrdersPage() {
     error,
     detailLoading,
     detailError,
+    statusUpdatingOrderId,
+    statusError,
+    startPreparing,
+    markOrderPaid,
+    cancelOrder,
+    deliverOrder,
+    refundOrder,
   } = useCashierOrders({ restaurantId });
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
 
@@ -61,11 +68,23 @@ export default function OrdersPage() {
       ) : (
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(360px,0.9fr)]">
           <section className="space-y-4">
+            {statusError ? (
+              <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {statusError}
+              </div>
+            ) : null}
+
             {orders.map((order) => (
               <OrderCard
                 key={order.orderId}
                 order={order}
                 isActive={order.orderId === selectedOrderId}
+                onStartPreparing={startPreparing}
+                onMarkPaid={markOrderPaid}
+                onCancelOrder={cancelOrder}
+                onDeliverOrder={deliverOrder}
+                onRefundOrder={refundOrder}
+                isUpdatingStatus={statusUpdatingOrderId === order.orderId}
                 onSelect={(orderId) => {
                   setSelectedOrderId(orderId);
                   setMobileDetailOpen(true);

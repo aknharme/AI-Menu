@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import InlineAlert from './InlineAlert';
 import { useCart } from '../contexts/CartContext';
+import { createOrder } from '../services/orderService';
+import { saveActiveCustomerOrder } from '../services/customerOrderStateService';
 import { createOrder, getOrder } from '../services/orderService';
 import type { OrderResponse } from '../types/order';
 import { formatPrice } from '../utils/formatPrice';
@@ -16,6 +18,7 @@ type CartDrawerProps = {
   restaurantId?: string;
   tableId?: string;
   onClose: () => void;
+  onOrderCreated: (order: OrderResponse) => void;
 };
 
 export default function CartDrawer({
@@ -23,6 +26,7 @@ export default function CartDrawer({
   restaurantId,
   tableId,
   onClose,
+  onOrderCreated,
 }: CartDrawerProps) {
   const {
     cartItems,
@@ -196,6 +200,8 @@ export default function CartDrawer({
         })),
       });
 
+      saveActiveCustomerOrder(restaurantId, tableId, order.orderId);
+      onOrderCreated(order);
       setCreatedOrder(order);
       saveActiveOrder(order);
       clearCart();

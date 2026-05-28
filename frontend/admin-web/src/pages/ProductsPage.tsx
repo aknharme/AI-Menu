@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import EmptyState from '../components/EmptyState';
 import InlineAlert from '../components/InlineAlert';
 import LoadingState from '../components/LoadingState';
@@ -20,6 +20,7 @@ import { extractApiErrorMessage } from '../utils/apiError';
 type ProductFormState = {
   name: string;
   price: string;
+  mainCategoryId: string;
   categoryId: string;
   description: string;
   content: string;
@@ -30,6 +31,7 @@ type ProductFormState = {
 const initialFormState: ProductFormState = {
   name: '',
   price: '',
+  mainCategoryId: '',
   categoryId: '',
   description: '',
   content: '',
@@ -37,7 +39,17 @@ const initialFormState: ProductFormState = {
   isActive: true,
 };
 
-// ProductsPage, urun listeleme ve urun ekleme-duzenleme akislarini admin panelde sunar.
+function sortCategories(categories: AdminCategory[]) {
+  return [...categories].sort((first, second) => {
+    if (first.displayOrder !== second.displayOrder) {
+      return first.displayOrder - second.displayOrder;
+    }
+
+    return first.name.localeCompare(second.name, 'tr');
+  });
+}
+
+// ProductsPage, ürünleri alt menü kategorisine bağlayarak admin CRUD akışını sunar.
 export default function ProductsPage() {
   const { restaurantId } = useRestaurantContext();
   const [categories, setCategories] = useState<AdminCategory[]>([]);
@@ -47,6 +59,19 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const mainCategories = useMemo(
+    () => sortCategories(categories.filter((category) => !category.parentCategoryId)),
+    [categories],
+  );
+
+  const subCategoriesForSelectedMain = useMemo(
+    () =>
+      sortCategories(
+        categories.filter((category) => category.parentCategoryId === form.mainCategoryId),
+      ),
+    [categories, form.mainCategoryId],
+  );
 
   useEffect(() => {
     void loadData();
@@ -60,11 +85,18 @@ export default function ProductsPage() {
         getCategories(restaurantId),
         getProducts(restaurantId),
       ]);
+      const sortedMainCategories = sortCategories(categoriesResponse.filter((category) => !category.parentCategoryId));
+      const firstMainCategoryId = sortedMainCategories[0]?.categoryId ?? '';
+      const firstSubCategoryId =
+        sortCategories(categoriesResponse.filter((category) => category.parentCategoryId === firstMainCategoryId))[0]
+          ?.categoryId ?? '';
+
       setCategories(categoriesResponse);
       setProducts(productsResponse);
       setForm((current) => ({
         ...current,
-        categoryId: current.categoryId || categoriesResponse[0]?.categoryId || '',
+        mainCategoryId: current.mainCategoryId || firstMainCategoryId,
+        categoryId: current.categoryId || firstSubCategoryId,
       }));
     } catch {
       setError('Ürün veya kategori verileri yüklenemedi.');
@@ -73,11 +105,19 @@ export default function ProductsPage() {
     }
   }
 
+  function getSubCategories(mainCategoryId: string) {
+    return sortCategories(categories.filter((category) => category.parentCategoryId === mainCategoryId));
+  }
+
   function resetForm() {
+    const firstMainCategoryId = mainCategories[0]?.categoryId ?? '';
+    const firstSubCategoryId = getSubCategories(firstMainCategoryId)[0]?.categoryId ?? '';
+
     setEditingProductId(null);
     setForm({
       ...initialFormState,
-      categoryId: categories[0]?.categoryId ?? '',
+      mainCategoryId: firstMainCategoryId,
+      categoryId: firstSubCategoryId,
     });
   }
 
@@ -86,8 +126,12 @@ export default function ProductsPage() {
       return 'Ürün adı boş olamaz.';
     }
 
+    if (!form.mainCategoryId) {
+      return 'Ana kategori seçimi zorunludur.';
+    }
+
     if (!form.categoryId) {
-      return 'Kategori seçimi zorunludur.';
+      return 'Alt menü seçimi zorunludur.';
     }
 
     if (!form.price.trim() || Number.isNaN(Number(form.price))) {
@@ -156,18 +200,37 @@ export default function ProductsPage() {
     }
   }
 
+  function handleMainCategoryChange(mainCategoryId: string) {
+    const firstSubCategoryId = getSubCategories(mainCategoryId)[0]?.categoryId ?? '';
+    setForm((current) => ({
+      ...current,
+      mainCategoryId,
+      categoryId: firstSubCategoryId,
+    }));
+  }
+
   function handleEdit(product: AdminProduct) {
-    // Secilen urun form alanlarina aktarilarak duzenleme akisi hizlandirilir.
+    const category = categories.find((currentCategory) => currentCategory.categoryId === product.categoryId);
+    const mainCategoryId = product.parentCategoryId ?? category?.categoryId ?? '';
+    const hasSubCategory = Boolean(product.parentCategoryId);
+
     setEditingProductId(product.productId);
     setForm({
       name: product.name,
       price: String(product.price),
-      categoryId: product.categoryId,
+      mainCategoryId,
+      categoryId: hasSubCategory ? product.categoryId : '',
       description: product.description,
       content: product.content,
       tags: product.tags.join(', '),
       isActive: product.isActive,
     });
+  }
+
+  function formatCategoryPath(product: AdminProduct) {
+    return product.parentCategoryName
+      ? `${product.parentCategoryName} / ${product.categoryName}`
+      : product.categoryName;
   }
 
   return (
@@ -202,16 +265,33 @@ export default function ProductsPage() {
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700">Kategori</span>
+            <span className="text-sm font-medium text-stone-700">Ana kategori</span>
+            <select
+              value={form.mainCategoryId}
+              onChange={(event) => handleMainCategoryChange(event.target.value)}
+              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            >
+              <option value="">Ana kategori seçin</option>
+              {mainCategories.map((category) => (
+                <option key={category.categoryId} value={category.categoryId}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-stone-700">Alt menü</span>
             <select
               value={form.categoryId}
               onChange={(event) => setForm((current) => ({ ...current, categoryId: event.target.value }))}
-              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              disabled={!form.mainCategoryId || subCategoriesForSelectedMain.length === 0}
+              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100"
             >
-              <option value="">Kategori seçin</option>
-              {categories.map((category) => (
+              <option value="">Alt menü seçin</option>
+              {subCategoriesForSelectedMain.map((category) => (
                 <option key={category.categoryId} value={category.categoryId}>
-                  {category.name}
+                  {category.name}{category.isActive ? '' : ' (Pasif)'}
                 </option>
               ))}
             </select>
@@ -296,7 +376,7 @@ export default function ProductsPage() {
           </div>
         ) : products.length === 0 ? (
           <div className="mt-5">
-            <EmptyState title="Urun yok" description="Henuz urun eklenmedi." />
+            <EmptyState title="Ürün yok" description="Henüz ürün eklenmedi." />
           </div>
         ) : (
           <div className="mt-5 space-y-3">
@@ -308,7 +388,7 @@ export default function ProductsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="space-y-2">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
-                      {product.categoryName}
+                      {formatCategoryPath(product)}
                     </p>
                     <h3 className="text-base font-semibold text-stone-950">{product.name}</h3>
                     <p className="text-sm leading-6 text-stone-600">{product.description || 'Açıklama yok'}</p>

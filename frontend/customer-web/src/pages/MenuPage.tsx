@@ -24,53 +24,11 @@ const QUICK_FILTERS = [
 
 type QuickFilterId = (typeof QUICK_FILTERS)[number]['id'];
 
-// 29 Nisan 2026: Ana menü kategorileri (Tatlı, İçecek, Yemek)
-// Not: Ara Sıcak kategorisi silinmiştir
-const MENU_GROUPS = [
-  {
-    id: 'dessert',
-    label: 'Tatlı',
-    description: 'Pasta, waffle, pancake ve özel tatlılar',
-    keywords: [
-      'tatli',
-      'tatlı',
-      'dessert',
-      'pasta',
-      'waffle',
-      'pancake',
-      'crepe',
-      'krep',
-      'cup',
-      'magnolia',
-      'san sebastian',
-    ],
-  },
-  {
-    id: 'drink',
-    label: 'İçecek',
-    description: 'Sıcak, soğuk ve kahve seçenekleri',
-    keywords: [
-      'icecek',
-      'içecek',
-      'drink',
-      'kahve',
-      'coffee',
-      'cay',
-      'çay',
-      'soguk',
-      'soğuk',
-      'sicak',
-      'sıcak',
-      'limonata',
-      'milkshake',
-    ],
-  },
-] as const;
-
 type MenuGroupView = {
   id: string;
   label: string;
   description: string;
+  mainCategory: MenuCategory;
   categories: MenuCategory[];
   productCount: number;
 };
@@ -83,15 +41,6 @@ function normalizeMenuText(value: string) {
     .replace(/İ/g, 'i')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
-}
-
-function getCategoryGroupId(categoryName: string) {
-  const normalizedName = normalizeMenuText(categoryName);
-  const matchedGroup = MENU_GROUPS.find((group) =>
-    group.keywords.some((keyword) => normalizedName.includes(keyword)),
-  );
-
-  return matchedGroup?.id ?? 'menu';
 }
 
 function WifiIcon() {
@@ -236,50 +185,40 @@ export default function MenuPage() {
   const [recommendationLoading, setRecommendationLoading] = useState(false);
   const [recommendationError, setRecommendationError] = useState<string | null>(null);
 
-  const categoryGroups = useMemo(() => {
-    const groups: MenuGroupView[] = MENU_GROUPS.map((group) => {
-      const groupCategories = categories.filter(
-        (category) => getCategoryGroupId(category.name) === group.id,
-      );
+  const categoryGroups = useMemo<MenuGroupView[]>(() => {
+    return [...categories]
+      .sort((first, second) => {
+        if (first.displayOrder !== second.displayOrder) {
+          return first.displayOrder - second.displayOrder;
+        }
 
-      return {
-        id: group.id,
-        label: group.label,
-        description: group.description,
-        categories: groupCategories,
-        productCount: groupCategories.reduce((total, category) => total + category.products.length, 0),
-      };
-    }).filter((group) => group.categories.length > 0);
+        return first.name.localeCompare(second.name, 'tr-TR');
+      })
+      .map((category) => {
+        const subCategories = [...(category.subCategories ?? [])].sort((first, second) => {
+          if (first.displayOrder !== second.displayOrder) {
+            return first.displayOrder - second.displayOrder;
+          }
 
-    const remainingCategories = categories.filter((category) => getCategoryGroupId(category.name) === 'menu');
+          return first.name.localeCompare(second.name, 'tr-TR');
+        });
+        const categoriesToShow = subCategories.length > 0
+          ? subCategories
+          : category.products.length > 0
+            ? [category]
+            : [];
 
-    if (remainingCategories.length > 0) {
-      groups.push({
-        id: 'menu',
-        label: 'Yemek',
-        description: 'Diğer kategori seçenekleri',
-        categories: remainingCategories,
-        productCount: remainingCategories.reduce((total, category) => total + category.products.length, 0),
+        return {
+          id: category.categoryId,
+          label: category.name,
+          description: subCategories.length > 0 ? `${subCategories.length} alt menü` : 'Alt menü yok',
+          mainCategory: category,
+          categories: categoriesToShow,
+          productCount:
+            category.products.length +
+            subCategories.reduce((total, subCategory) => total + subCategory.products.length, 0),
+        };
       });
-    }
-
-    // 29 Nisan 2026: Hero bölümündeki ana kategori sırasını düzelt: TATLI, İÇECEK, YEMEK
-    // Eski sıra: TATLI, İÇECEK, ARA SICAK, YEMEK (Ara Sıcak kaldırıldı)
-    const reorderedGroups: MenuGroupView[] = [];
-    
-    // 1. TATLI
-    const dessertGroup = groups.find(g => g.id === 'dessert');
-    if (dessertGroup) reorderedGroups.push(dessertGroup);
-    
-    // 2. İÇECEK
-    const drinkGroup = groups.find(g => g.id === 'drink');
-    if (drinkGroup) reorderedGroups.push(drinkGroup);
-    
-    // 3. YEMEK
-    const menuGroup = groups.find(g => g.id === 'menu');
-    if (menuGroup) reorderedGroups.push(menuGroup);
-
-    return reorderedGroups;
   }, [categories]);
 
   const activeGroup = useMemo(() => {
@@ -303,6 +242,7 @@ export default function MenuPage() {
 
   useEffect(() => {
     if (!activeGroupCategories.length) {
+      setActiveCategoryId(undefined);
       return;
     }
 
@@ -581,7 +521,6 @@ export default function MenuPage() {
             <div className="grid grid-cols-2 gap-4">
               {categoryGroups.map((group) => {
                 const isActive = group.id === activeGroup?.id;
-                const groupLabel = group.label === 'İçecek' ? 'İçecekler' : group.label;
 
                 return (
                   <button
@@ -596,7 +535,7 @@ export default function MenuPage() {
                       isActive ? 'text-white' : 'text-white/45 hover:text-white',
                     ].join(' ')}
                   >
-                    <h2 className="text-lg font-black uppercase tracking-[0.06em]">{groupLabel}</h2>
+                    <h2 className="text-lg font-black uppercase tracking-[0.06em]">{group.label}</h2>
                   </button>
                 );
               })}
@@ -798,6 +737,30 @@ export default function MenuPage() {
               </p>
             </div>
 
+            {activeGroupCategories.length === 0 ? (
+              <EmptyState
+                title="Alt menü yok"
+                description="Bu ana kategoride henüz aktif alt menü bulunmuyor."
+              />
+            ) : visibleProducts.length === 0 ? (
+              <EmptyState
+                title="Bu alt menüde ürün bulunmuyor"
+                description="Admin panelden ürün eklendiğinde burada görünecek."
+              />
+            ) : (
+              <div className="grid gap-2 pb-[72px]">
+                {visibleProducts.map((product) => (
+                  <ProductCard
+                    key={product.productId}
+                    product={product}
+                    quantity={getBaseCartItem(product.productId)?.quantity ?? 0}
+                    onSelect={setSelectedProduct}
+                    onIncrement={handleQuickIncrement}
+                    onDecrement={handleQuickDecrement}
+                  />
+                ))}
+              </div>
+            )}
             <div className="grid gap-2">
               {visibleProducts.length > 0 ? visibleProducts.map((product) => (
                 <ProductCard
