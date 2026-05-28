@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { MenuCategory } from '../types/menu';
 
 type CategoryTabsProps = {
@@ -11,12 +12,46 @@ export default function CategoryTabs({
   activeCategoryId,
   onSelect,
 }: CategoryTabsProps) {
+  const [isMouseDown, setIsMouseDown] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    setIsMouseDown(true);
+    setStartX(e.pageX - container.offsetLeft);
+    setScrollLeft(container.scrollLeft);
+  };
+
+  const handleMouseLeave = () => {
+    setIsMouseDown(false);
+  };
+
+  const handleMouseUp = () => {
+    setIsMouseDown(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isMouseDown) return;
+    e.preventDefault();
+    const container = e.currentTarget;
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    container.scrollLeft = scrollLeft - walk;
+  };
+
   if (categories.length === 0) {
     return null;
   }
 
   return (
-    <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto border-y border-stone-100 bg-white px-4 py-2.5">
+    <div
+      onMouseDown={handleMouseDown}
+      onMouseLeave={handleMouseLeave}
+      onMouseUp={handleMouseUp}
+      onMouseMove={handleMouseMove}
+      className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto border-y border-stone-100 bg-white px-4 py-2.5 cursor-grab active:cursor-grabbing select-none scrollbar-none"
+    >
       <div className="flex w-max max-w-none gap-2">
         {categories.map((category) => {
           const isActive = category.categoryId === activeCategoryId;

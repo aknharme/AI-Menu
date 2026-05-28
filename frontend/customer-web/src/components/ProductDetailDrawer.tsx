@@ -124,7 +124,7 @@ export default function ProductDetailDrawer({
               {detail.ingredients && (
                 <section className="space-y-2">
                   <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
-                    Icerik
+                    İçerik
                   </h3>
                   <p className="text-sm leading-7 text-stone-600">{detail.ingredients}</p>
                 </section>
@@ -146,7 +146,7 @@ export default function ProductDetailDrawer({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-stone-500">Alerjen bilgisi belirtilmemis.</p>
+                  <p className="text-sm text-stone-500">Alerjen bilgisi belirtilmemiş.</p>
                 )}
               </section>
 
@@ -199,13 +199,13 @@ export default function ProductDetailDrawer({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-stone-500">Bu urun icin varyant bulunmuyor.</p>
+                  <p className="text-sm text-stone-500">Bu ürün için varyant bulunmuyor.</p>
                 )}
               </section>
 
               <section className="space-y-3">
                 <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
-                  Siparis Tercihi
+                  Sipariş Tercihi
                 </h3>
 
                 <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 p-3">
@@ -232,14 +232,14 @@ export default function ProductDetailDrawer({
                 </div>
 
                 <label className="block">
-                  <span className="text-sm text-stone-600">Urun notu</span>
+                  <span className="text-sm text-stone-600">Ürün notu</span>
                   <textarea
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
                     maxLength={500}
                     rows={3}
                     className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400 focus:bg-white"
-                    placeholder="Orn. az buzlu, sogansiz, ekstra sos"
+                    placeholder="Örn. az buzlu, soğansız, ekstra sos"
                   />
                 </label>
               </section>
@@ -255,8 +255,8 @@ export default function ProductDetailDrawer({
             className="w-full rounded-2xl bg-stone-950 px-4 py-3 text-sm font-semibold text-white opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
           >
             {detail
-              ? `${quantity} adet icin sepete ekle • ${formatPrice(unitPrice * quantity)}`
-              : 'Urun hazirlaniyor'}
+              ? `${quantity} adet için sepete ekle • ${formatPrice(unitPrice * quantity)}`
+              : 'Ürün hazırlanıyor'}
           </button>
         </div>
       </div>

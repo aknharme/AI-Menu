@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import InlineAlert from './InlineAlert';
 import { useCart } from '../contexts/CartContext';
-import { createOrder } from '../services/orderService';
 import { saveActiveCustomerOrder } from '../services/customerOrderStateService';
 import { createOrder, getOrder } from '../services/orderService';
 import type { OrderResponse } from '../types/order';
@@ -69,9 +68,9 @@ export default function CartDrawer({
   };
 
   const orderSteps = [
-    { key: 'Pending', label: 'Alindi' },
-    { key: 'Preparing', label: 'Onaylandi' },
-    { key: 'Ready', label: 'Hazirlaniyor' },
+    { key: 'Pending', label: 'Alındı' },
+    { key: 'Preparing', label: 'Onaylandı' },
+    { key: 'Ready', label: 'Hazırlanıyor' },
     { key: 'Paid', label: 'Teslim edildi' },
   ];
 
@@ -164,22 +163,22 @@ export default function CartDrawer({
 
   async function handleSubmit() {
     if (!restaurantId || !tableId || cartItems.length === 0) {
-      setError('Siparis gondermek icin restoran, masa ve en az bir urun gerekli.');
+      setError('Sipariş göndermek için restoran, masa ve en az bir ürün gerekli.');
       return;
     }
 
     if (customerName.trim().length > 120) {
-      setError('Musteri adi en fazla 120 karakter olabilir.');
+      setError('Müşteri adı en fazla 120 karakter olabilir.');
       return;
     }
 
     if (orderNote.trim().length > 500) {
-      setError('Siparis notu en fazla 500 karakter olabilir.');
+      setError('Sipariş notu en fazla 500 karakter olabilir.');
       return;
     }
 
     if (cartItems.some((item) => item.note.trim().length > 500)) {
-      setError('Urun notlari en fazla 500 karakter olabilir.');
+      setError('Ürün notları en fazla 500 karakter olabilir.');
       return;
     }
 
