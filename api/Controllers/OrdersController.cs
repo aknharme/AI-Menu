@@ -2,6 +2,7 @@ using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AiMenu.Api.Controllers;
 
@@ -13,6 +14,7 @@ public class OrdersController(IOrderService orderService) : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(OrderResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponseDto), StatusCodes.Status400BadRequest)]
+    [EnableRateLimiting("PublicOrders")]
     public async Task<IActionResult> CreateOrder(
         [FromBody] CreateOrderRequestDto request,
         CancellationToken cancellationToken)

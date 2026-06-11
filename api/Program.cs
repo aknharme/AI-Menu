@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Threading.RateLimiting;
 
 var contentRoot = Directory.GetCurrentDirectory();
 var apiContentRoot = Path.Combine(contentRoot, "api");
@@ -33,6 +34,8 @@ var configuration = new ConfigurationBuilder()
 
 var urls = configuration["urls"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://localhost:5268";
 var connectionString = configuration.GetConnectionString("DefaultConnection");
+var environmentName = configuration["ASPNETCORE_ENVIRONMENT"] ?? Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+var isDevelopment = string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase);
 
 // Bu ortamda WebApplication.CreateBuilder takıldığı için aynı pipeline klasik WebHostBuilder ile kuruluyor.
 var host = new WebHostBuilder()
@@ -97,15 +100,48 @@ var host = new WebHostBuilder()
             });
         });
 
-        // MVP asamasinda frontend gelistirmesini bloklamamak icin tum origin'lere izin veriyoruz.
         services.AddCors(options =>
         {
-            options.AddPolicy("AllowAll", policy =>
+            options.AddPolicy("ConfiguredOrigins", policy =>
             {
-                policy.AllowAnyOrigin()
+                var allowedOrigins = configuration
+                    .GetSection("Cors:AllowedOrigins")
+                    .Get<string[]>() ?? Array.Empty<string>();
+
+                if (allowedOrigins.Length == 0 && isDevelopment)
+                {
+                    policy.AllowAnyOrigin()
+                        .AllowAnyHeader()
+                        .AllowAnyMethod();
+                    return;
+                }
+
+                policy.WithOrigins(allowedOrigins)
                     .AllowAnyHeader()
                     .AllowAnyMethod();
             });
+        });
+        services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("PublicAi", context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 20,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
+            options.AddPolicy("PublicOrders", context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 10,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
         });
 
         // Connection string yoksa proje lokal test icin InMemory ile calisir, varsa PostgreSQL kullanir.
@@ -124,7 +160,7 @@ var host = new WebHostBuilder()
         services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
         // JWT ayarlari login ve panel erisimleri icin tek noktadan okunur.
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
-        services.AddHttpClient<IAiTagService, OllamaTagService>((serviceProvider, client) =>
+        services.AddHttpClient<IAiTextGenerationService, OllamaTextGenerationService>((serviceProvider, client) =>
         {
             var ollamaOptions = serviceProvider
                 .GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>()
@@ -135,6 +171,11 @@ var host = new WebHostBuilder()
         });
 
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+        if (!isDevelopment && jwtOptions.SecretKey.Contains("Local_Development", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Production ortaminda Jwt:SecretKey guvenli bir secret ile degistirilmelidir.");
+        }
+
         var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey));
 
         // JWT middleware admin ve cashier panellerinin bearer token ile korunmasini saglar.
@@ -162,6 +203,7 @@ var host = new WebHostBuilder()
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IAdminRepository, AdminRepository>();
+        services.AddScoped<IAdminCatalogRepository, AdminCatalogRepository>();
         services.AddScoped<ILogRepository, LogRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IRecommendationRepository, RecommendationRepository>();
@@ -169,11 +211,19 @@ var host = new WebHostBuilder()
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IAdminCatalogService, AdminCatalogService>();
         services.AddScoped<IAdminStatsService, AdminStatsService>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<IRecommendationService, RecommendationService>();
+        services.AddSingleton<IAiConversationMemoryService, InMemoryAiConversationMemoryService>();
+        services.AddScoped<IAiTagService, OllamaTagService>();
+        services.AddScoped<IMessageRouterService, MessageRouterService>();
+        services.AddScoped<IAiAssistantService, AiAssistantService>();
         services.AddScoped<ICashierService, CashierService>();
+        services.AddScoped<IMenuContextService, MenuContextService>();
+        services.AddScoped<IMenuGroundingService, MenuGroundingService>();
+        services.AddScoped<IAiMessageService, AiMessageService>();
     })
     .Configure(app =>
     {
@@ -198,12 +248,39 @@ var host = new WebHostBuilder()
         app.UseSwagger();
         app.UseSwaggerUI();
         app.UseRouting();
-        app.UseCors("AllowAll");
+        app.UseCors("ConfiguredOrigins");
+        app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseEndpoints(endpoints =>
         {
             // Kök endpoint, servis ayakta mi diye hizli kontrol yapmak icin kullanilir.
+            endpoints.MapGet("/health", async context =>
+            {
+                using var scope = app.ApplicationServices.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                var ollamaOptions = scope.ServiceProvider
+                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>()
+                    .Value;
+
+                var databaseStatus = dbContext.Database.IsRelational()
+                    ? await dbContext.Database.CanConnectAsync(context.RequestAborted)
+                    : true;
+
+                context.Response.StatusCode = databaseStatus
+                    ? StatusCodes.Status200OK
+                    : StatusCodes.Status503ServiceUnavailable;
+
+                await context.Response.WriteAsJsonAsync(new
+                {
+                    status = databaseStatus ? "healthy" : "degraded",
+                    database = databaseStatus ? "ok" : "unreachable",
+                    aiProvider = "ollama",
+                    ollamaBaseUrl = ollamaOptions.BaseUrl,
+                    environment = environmentName
+                });
+            });
+
             endpoints.MapGet("/", async context => await context.Response.WriteAsync("API calisiyor"));
             endpoints.MapControllers();
         });

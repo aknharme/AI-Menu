@@ -1,4 +1,11 @@
-export type CashierOrderStatus = 'Pending' | 'Preparing' | 'Ready' | 'Paid' | string;
+export type CashierOrderStatus =
+  | 'Pending'
+  | 'Preparing'
+  | 'Ready'
+  | 'Paid'
+  | 'Cancelled'
+  | 'Refunded'
+  | string;
 
 export type CashierOrderListItem = {
   orderId: string;

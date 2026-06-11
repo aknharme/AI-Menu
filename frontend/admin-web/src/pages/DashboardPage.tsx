@@ -2,8 +2,20 @@ import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import StatCard from '../components/StatCard';
 import { useRestaurantContext } from '../hooks/useRestaurantContext';
-import { getDashboard, getRecentOrders, getRecommendationStats, getTopProducts } from '../services/adminService';
-import type { DashboardSummary, RecentOrder, RecommendationStat, TopProduct } from '../types/admin';
+import {
+  getAdminOrders,
+  getDashboard,
+  getRecentOrders,
+  getRecommendationStats,
+  getTopProducts,
+} from '../services/adminService';
+import type {
+  AdminOrderListItem,
+  DashboardSummary,
+  RecentOrder,
+  RecommendationStat,
+  TopProduct,
+} from '../types/admin';
 
 // DashboardPage restoran yönetiminin ilk admin ekranıdır.
 export default function DashboardPage() {
@@ -12,6 +24,7 @@ export default function DashboardPage() {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [recommendations, setRecommendations] = useState<RecommendationStat[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [liveOrders, setLiveOrders] = useState<AdminOrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -23,12 +36,19 @@ export default function DashboardPage() {
         setLoading(true);
         setError('');
 
-        const [summaryResponse, topProductsResponse, recommendationResponse, recentOrdersResponse] =
+        const [
+          summaryResponse,
+          topProductsResponse,
+          recommendationResponse,
+          recentOrdersResponse,
+          liveOrdersResponse,
+        ] =
           await Promise.all([
             getDashboard(restaurantId),
             getTopProducts(restaurantId),
             getRecommendationStats(restaurantId),
             getRecentOrders(restaurantId),
+            getAdminOrders(restaurantId),
           ]);
 
         if (!isMounted) {
@@ -39,6 +59,7 @@ export default function DashboardPage() {
         setTopProducts(topProductsResponse);
         setRecommendations(recommendationResponse);
         setRecentOrders(recentOrdersResponse);
+        setLiveOrders(liveOrdersResponse);
       } catch {
         if (!isMounted) {
           return;
@@ -61,6 +82,10 @@ export default function DashboardPage() {
 
   const hasAnyListData =
     topProducts.length > 0 || recommendations.length > 0 || recentOrders.length > 0;
+  const pendingCount = liveOrders.filter((order) => order.status === 'Pending').length;
+  const liveCount = liveOrders.filter((order) =>
+    ['Pending', 'Preparing', 'Ready'].includes(order.status),
+  ).length;
 
   function formatPrice(value: number) {
     return new Intl.NumberFormat('tr-TR', {
@@ -104,12 +129,12 @@ export default function DashboardPage() {
           <StatCard
             label="Toplam Sipariş"
             value={String(summary?.totalOrderCount ?? 0)}
-            hint="Tum zamanlar"
+            hint={`Tum zamanlar | ${liveOrders.length} siparis kaydi`}
           />
           <StatCard
             label="Bekleyen Sipariş"
-            value={String(summary?.pendingOrderCount ?? 0)}
-            hint="Anlik durum"
+            value={String(liveOrders.length > 0 ? pendingCount : (summary?.pendingOrderCount ?? 0))}
+            hint={`Anlik durum | ${liveCount} aktif siparis`}
           />
           <StatCard
             label="Günün Popüleri"
@@ -218,6 +243,12 @@ export default function DashboardPage() {
             className="rounded-full bg-stone-950 px-4 py-3 text-sm font-medium text-white"
           >
             Ürün Ekle
+          </Link>
+          <Link
+            to="/orders"
+            className="rounded-full border border-stone-300 px-4 py-3 text-sm font-medium text-stone-700"
+          >
+            Sipariş Yönet
           </Link>
           <Link
             to="/tables"

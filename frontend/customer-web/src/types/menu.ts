@@ -5,14 +5,19 @@ export type ProductListItem = {
   name: string;
   description: string;
   price: number;
+  imageUrl?: string;
+  photoUrl?: string;
+  thumbnailUrl?: string;
   tags: string[];
 };
 
 export type MenuCategory = {
   categoryId: string;
+  parentCategoryId?: string | null;
   name: string;
   displayOrder: number;
   products: ProductListItem[];
+  subCategories?: MenuCategory[];
 };
 
 export type MenuResponse = {
@@ -37,6 +42,9 @@ export type ProductDetail = {
   description: string;
   ingredients: string;
   price: number;
+  imageUrl?: string;
+  photoUrl?: string;
+  thumbnailUrl?: string;
   allergens: string[];
   tags: string[];
   variants: ProductVariant[];

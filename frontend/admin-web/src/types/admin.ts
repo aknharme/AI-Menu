@@ -2,14 +2,19 @@
 export type AdminCategory = {
   categoryId: string;
   restaurantId: string;
+  parentCategoryId: string | null;
+  parentCategoryName: string;
   name: string;
   displayOrder: number;
   isActive: boolean;
+  subCategoryCount: number;
+  productCount: number;
 };
 
 // SaveAdminCategoryRequest, kategori create ve update isteklerinde kullanilir.
 export type SaveAdminCategoryRequest = {
   restaurantId: string;
+  parentCategoryId?: string | null;
   name: string;
   displayOrder: number;
   isActive: boolean;
@@ -21,10 +26,13 @@ export type AdminProduct = {
   restaurantId: string;
   categoryId: string;
   categoryName: string;
+  parentCategoryId: string | null;
+  parentCategoryName: string;
   name: string;
   price: number;
   description: string;
   content: string;
+  tags: string[];
   isActive: boolean;
 };
 
@@ -36,6 +44,7 @@ export type SaveAdminProductRequest = {
   price: number;
   description: string;
   content: string;
+  tags: string[];
   isActive: boolean;
 };
 
@@ -89,4 +98,76 @@ export type RecommendationStat = {
   productId: string;
   name: string;
   recommendationCount: number;
+};
+
+// OrderStatusLog, admin panelde siparis durum gecmisini gosteren API modelidir.
+export type OrderStatusLog = {
+  id: string;
+  restaurantId: string;
+  orderId: string;
+  tableName: string;
+  orderTotalAmount: number;
+  oldStatus: string | null;
+  newStatus: string;
+  changedByUserId: string | null;
+  changedAt: string;
+export type AdminOrderStatus =
+  | 'Pending'
+  | 'Preparing'
+  | 'Ready'
+  | 'Paid'
+  | 'Cancelled'
+  | string;
+
+export type AdminOrderListItem = {
+  orderId: string;
+  restaurantId: string;
+  tableId: string;
+  tableName: string;
+  status: AdminOrderStatus;
+  createdAtUtc: string;
+  totalAmount: number;
+  itemCount: number;
+};
+
+export type AdminOrderItem = {
+  orderItemId: string;
+  productId: string;
+  productName: string;
+  quantity: number;
+  note: string;
+  variantName: string;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+export type AdminOrderDetail = {
+  orderId: string;
+  restaurantId: string;
+  tableId: string;
+  tableName: string;
+  customerName: string;
+  note: string;
+  status: string;
+  status: AdminOrderStatus;
+  createdAtUtc: string;
+  totalAmount: number;
+  items: AdminOrderItem[];
+};
+
+export type AdminAiGroundedProduct = {
+  productId: string;
+  name: string;
+  categoryName: string;
+  price: number;
+  description: string;
+  tags: string[];
+};
+
+export type AdminAiTestResponse = {
+  intent: string;
+  queryType: string;
+  hasSpecificGrounding: boolean;
+  reply: string;
+  groundedProducts: AdminAiGroundedProduct[];
 };
