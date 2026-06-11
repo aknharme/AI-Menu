@@ -72,19 +72,19 @@ export default function ProductDetailDrawer({
   }
 
   return (
-    <div className="fixed inset-0 z-30 flex items-end justify-center bg-stone-950/50 p-0 sm:p-6">
-      <div className="w-full max-w-xl rounded-t-[32px] bg-white shadow-2xl sm:rounded-[32px]">
-        <div className="flex items-center justify-between border-b border-stone-200 px-5 py-4">
+    <div className="fixed inset-0 z-30 flex items-end justify-center bg-[#0b2012]/70 p-0 sm:p-6">
+      <div className="w-full max-w-xl rounded-t-[32px] bg-[#fff8e9] shadow-2xl sm:rounded-[32px]">
+        <div className="flex items-center justify-between border-b border-[#d8c998] px-5 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-stone-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#b3903f]">
               {detail?.categoryName ?? currentProduct.categoryName}
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-stone-950">{currentProduct.name}</h2>
+            <h2 className="pub-display mt-1 text-xl font-bold text-[#14351f]">{currentProduct.name}</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-stone-200 px-3 py-2 text-sm text-stone-600"
+            className="rounded-full border border-[#d8c998] bg-[#f4ead4] px-3 py-2 text-sm font-semibold text-[#14351f] active:scale-[0.98]"
           >
             Kapat
           </button>
@@ -93,9 +93,9 @@ export default function ProductDetailDrawer({
         <div className="max-h-[75vh] space-y-6 overflow-y-auto px-5 py-5">
           {isLoading && (
             <div className="space-y-3">
-              <div className="h-4 w-1/3 animate-pulse rounded bg-stone-200" />
-              <div className="h-4 w-full animate-pulse rounded bg-stone-100" />
-              <div className="h-4 w-5/6 animate-pulse rounded bg-stone-100" />
+              <div className="h-4 w-1/3 animate-pulse rounded bg-[#e8ddbf]" />
+              <div className="h-4 w-full animate-pulse rounded bg-[#f4ead4]" />
+              <div className="h-4 w-5/6 animate-pulse rounded bg-[#f4ead4]" />
             </div>
           )}
 
@@ -109,29 +109,29 @@ export default function ProductDetailDrawer({
             <>
               <section className="space-y-3">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-2xl font-semibold text-stone-950">
+                  <p className="text-2xl font-bold text-[#14351f]">
                     {formatPrice(detail.price)}
                   </p>
                   {tableId && (
-                    <span className="rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-600">
+                    <span className="rounded-full bg-[#e7f0df] px-3 py-1 text-xs font-semibold text-[#14351f] ring-1 ring-[#cfe0c6]">
                       {formatTableLabel(tableId)}
                     </span>
                   )}
                 </div>
-                <p className="text-sm leading-7 text-stone-600">{detail.description}</p>
+                <p className="text-sm leading-7 text-[#52624a]">{detail.description}</p>
               </section>
 
               {detail.ingredients && (
                 <section className="space-y-2">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
-                    Icerik
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#b3903f]">
+                    İçerik
                   </h3>
-                  <p className="text-sm leading-7 text-stone-600">{detail.ingredients}</p>
+                  <p className="text-sm leading-7 text-[#52624a]">{detail.ingredients}</p>
                 </section>
               )}
 
               <section className="space-y-3">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#b3903f]">
                   Alerjen Bilgisi
                 </h3>
                 {detail.allergens.length > 0 ? (
@@ -146,20 +146,20 @@ export default function ProductDetailDrawer({
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-stone-500">Alerjen bilgisi belirtilmemis.</p>
+                  <p className="text-sm text-[#52624a]">Alerjen bilgisi belirtilmemiş.</p>
                 )}
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#b3903f]">
                   Varyantlar
                 </h3>
                 {detail.variants.length > 0 ? (
                   <div className="space-y-2">
-                    <label className="flex items-center justify-between rounded-2xl border border-stone-200 bg-white px-4 py-3">
+                    <label className="flex items-center justify-between rounded-2xl border border-[#d8c998] bg-white px-4 py-3">
                       <div>
-                        <p className="font-medium text-stone-900">Standart</p>
-                        <p className="text-sm text-stone-500">
+                        <p className="font-medium text-[#14351f]">Standart</p>
+                        <p className="text-sm text-[#52624a]">
                           Toplam {formatPrice(detail.price)}
                         </p>
                       </div>
@@ -168,23 +168,23 @@ export default function ProductDetailDrawer({
                         name="variant"
                         checked={selectedVariantId === ''}
                         onChange={() => setSelectedVariantId('')}
-                        className="h-4 w-4 accent-amber-600"
+                        className="h-4 w-4 accent-[#14351f]"
                       />
                     </label>
 
                     {detail.variants.map((variant) => (
                       <label
                         key={variant.productVariantId}
-                        className="flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3"
+                        className="flex items-center justify-between rounded-2xl border border-[#d8c998] bg-[#f4ead4] px-4 py-3"
                       >
                         <div>
-                          <p className="font-medium text-stone-900">{variant.name}</p>
-                          <p className="text-sm text-stone-500">
+                          <p className="font-medium text-[#14351f]">{variant.name}</p>
+                          <p className="text-sm text-[#52624a]">
                             Toplam {formatPrice(variant.finalPrice)}
                           </p>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="text-sm font-semibold text-amber-700">
+                          <span className="text-sm font-semibold text-[#b3903f]">
                             {variant.priceDelta > 0 ? `+${formatPrice(variant.priceDelta)}` : 'Dahil'}
                           </span>
                           <input
@@ -192,39 +192,39 @@ export default function ProductDetailDrawer({
                             name="variant"
                             checked={selectedVariantId === variant.productVariantId}
                             onChange={() => setSelectedVariantId(variant.productVariantId)}
-                            className="h-4 w-4 accent-amber-600"
+                            className="h-4 w-4 accent-[#14351f]"
                           />
                         </div>
                       </label>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-stone-500">Bu urun icin varyant bulunmuyor.</p>
+                  <p className="text-sm text-[#52624a]">Bu ürün için varyant bulunmuyor.</p>
                 )}
               </section>
 
               <section className="space-y-3">
-                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-stone-500">
-                  Siparis Tercihi
+                <h3 className="text-sm font-semibold uppercase tracking-[0.2em] text-[#b3903f]">
+                  Sipariş Tercihi
                 </h3>
 
-                <div className="flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 p-3">
-                  <span className="text-sm text-stone-600">Adet</span>
-                  <div className="inline-flex items-center rounded-full border border-stone-200 bg-white p-1">
+                <div className="flex items-center justify-between rounded-2xl border border-[#d8c998] bg-[#f4ead4] p-3">
+                  <span className="text-sm text-[#14351f]">Adet</span>
+                  <div className="inline-flex items-center rounded-full border border-[#d8c998] bg-white p-1">
                     <button
                       type="button"
                       onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-                      className="rounded-full px-3 py-1.5 text-sm text-stone-700"
+                      className="rounded-full px-3 py-1.5 text-sm text-[#14351f]"
                     >
                       -
                     </button>
-                    <span className="min-w-10 text-center text-sm font-semibold text-stone-950">
+                    <span className="min-w-10 text-center text-sm font-semibold text-[#14351f]">
                       {quantity}
                     </span>
                     <button
                       type="button"
                       onClick={() => setQuantity((current) => Math.min(99, current + 1))}
-                      className="rounded-full px-3 py-1.5 text-sm text-stone-700"
+                      className="rounded-full px-3 py-1.5 text-sm text-[#14351f]"
                     >
                       +
                     </button>
@@ -232,14 +232,14 @@ export default function ProductDetailDrawer({
                 </div>
 
                 <label className="block">
-                  <span className="text-sm text-stone-600">Urun notu</span>
+                  <span className="text-sm text-[#14351f]">Ürün notu</span>
                   <textarea
                     value={note}
                     onChange={(event) => setNote(event.target.value)}
                     maxLength={500}
                     rows={3}
-                    className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-amber-400 focus:bg-white"
-                    placeholder="Orn. az buzlu, sogansiz, ekstra sos"
+                    className="mt-2 w-full rounded-2xl border border-[#d8c998] bg-[#fff8e9] px-4 py-3 text-sm text-[#14351f] outline-none transition focus:border-[#d8b95f] focus:bg-white"
+                    placeholder="Örn. az buzlu, soğansız, ekstra sos"
                   />
                 </label>
               </section>
@@ -247,16 +247,16 @@ export default function ProductDetailDrawer({
           )}
         </div>
 
-        <div className="border-t border-stone-200 px-5 py-4">
+        <div className="border-t border-[#d8c998] bg-[#fff8e9] px-5 py-4">
           <button
             type="button"
             onClick={handleAddToCart}
             disabled={isLoading || !detail}
-            className="w-full rounded-2xl bg-stone-950 px-4 py-3 text-sm font-semibold text-white opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+            className="w-full rounded-2xl bg-[#14351f] px-4 py-3 text-sm font-semibold text-[#f8efd9] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#e8ddbf] disabled:text-[#6d775e]"
           >
             {detail
-              ? `${quantity} adet icin sepete ekle • ${formatPrice(unitPrice * quantity)}`
-              : 'Urun hazirlaniyor'}
+              ? `${quantity} adet için sepete ekle • ${formatPrice(unitPrice * quantity)}`
+              : 'Ürün hazırlanıyor'}
           </button>
         </div>
       </div>
