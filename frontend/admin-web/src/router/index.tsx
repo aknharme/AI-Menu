@@ -1,7 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import RequireAuth from '../components/RequireAuth';
 import AdminLayout from '../layouts/AdminLayout';
-import AiTestPage from '../pages/AiTestPage';
 import AccountingPage from '../pages/AccountingPage';
 import CategoriesPage from '../pages/CategoriesPage';
 import DashboardPage from '../pages/DashboardPage';
@@ -53,8 +52,6 @@ export const router = createBrowserRouter(
             {
               path: 'order-logs',
               element: <OrderLogsPage />,
-              path: 'ai-test',
-              element: <AiTestPage />,
             },
           ],
         },

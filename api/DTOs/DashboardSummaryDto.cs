@@ -10,5 +10,4 @@ public class DashboardSummaryDto
     public IReadOnlyCollection<RecentOrderDto> RecentOrders { get; set; } = Array.Empty<RecentOrderDto>();
     public IReadOnlyCollection<TopProductDto> TopProducts { get; set; } = Array.Empty<TopProductDto>();
     public IReadOnlyCollection<TopProductDto> PopularProducts { get; set; } = Array.Empty<TopProductDto>();
-    public IReadOnlyCollection<RecommendationStatDto> TopRecommendedProducts { get; set; } = Array.Empty<RecommendationStatDto>();
 }

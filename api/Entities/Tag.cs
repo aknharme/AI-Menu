@@ -1,6 +1,6 @@
 namespace AiMenu.Api.Entities;
 
-// Tag, AI'nin uretecegi kelimelerin restoran bazli tekil sozlugunu temsil eder.
+// Tag, urunleri restoran bazinda gruplayan tekil sozluk kaydini temsil eder.
 public class Tag
 {
     public Guid TagId { get; set; }

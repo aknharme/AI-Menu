@@ -144,11 +144,6 @@ public class OrderServiceTests
             return Task.CompletedTask;
         }
 
-        public Task LogRecommendationAsync(Guid restaurantId, string prompt, IReadOnlyCollection<string> extractedTags, IReadOnlyCollection<Guid> recommendedProductIds, CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
-
         public Task LogOrderStatusAsync(Guid restaurantId, Guid orderId, string? oldStatus, string newStatus, Guid? changedByUserId = null, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
@@ -157,11 +152,6 @@ public class OrderServiceTests
         public Task<IReadOnlyCollection<AuditLogDto>?> GetAuditLogsAsync(Guid restaurantId, CancellationToken cancellationToken = default)
         {
             return Task.FromResult<IReadOnlyCollection<AuditLogDto>?>(Array.Empty<AuditLogDto>());
-        }
-
-        public Task<IReadOnlyCollection<RecommendationLogDto>?> GetRecommendationLogsAsync(Guid restaurantId, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult<IReadOnlyCollection<RecommendationLogDto>?>(Array.Empty<RecommendationLogDto>());
         }
 
         public Task<IReadOnlyCollection<OrderStatusLogDto>?> GetOrderStatusLogsAsync(Guid restaurantId, CancellationToken cancellationToken = default)

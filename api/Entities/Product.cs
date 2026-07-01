@@ -1,6 +1,6 @@
 namespace AiMenu.Api.Entities;
 
-// Product, menude satilan urunu temsil eder; AI tarafinda kullanilacak tag iliskisi join tablo uzerinden kurulur.
+// Product, menude satilan urunu temsil eder; tag iliskisi join tablo uzerinden kurulur.
 public class Product
 {
     public Guid ProductId { get; set; }

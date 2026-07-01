@@ -8,7 +8,6 @@ public class AdminStatsService(IAdminRepository adminRepository) : IAdminStatsSe
 {
     private const int DashboardRecentOrdersLimit = 6;
     private const int DashboardTopProductsLimit = 5;
-    private const int DashboardTopRecommendationsLimit = 5;
 
     public async Task<DashboardSummaryDto?> GetDashboardSummaryAsync(
         Guid restaurantId,
@@ -25,7 +24,6 @@ public class AdminStatsService(IAdminRepository adminRepository) : IAdminStatsSe
         var pendingOrderCount = await adminRepository.GetPendingOrderCountAsync(restaurantId, startUtc, endUtc, cancellationToken);
         var recentOrders = await GetRecentOrdersAsync(restaurantId, date, cancellationToken) ?? [];
         var topProducts = await GetTopProductsAsync(restaurantId, date, cancellationToken) ?? [];
-        var topRecommendedProducts = await GetRecommendationStatsAsync(restaurantId, date, cancellationToken) ?? [];
 
         return new DashboardSummaryDto
         {
@@ -35,8 +33,7 @@ public class AdminStatsService(IAdminRepository adminRepository) : IAdminStatsSe
             PendingOrderCount = pendingOrderCount,
             RecentOrders = recentOrders.Take(DashboardRecentOrdersLimit).ToList(),
             TopProducts = topProducts.Take(DashboardTopProductsLimit).ToList(),
-            PopularProducts = topProducts.Take(DashboardTopProductsLimit).ToList(),
-            TopRecommendedProducts = topRecommendedProducts.Take(DashboardTopRecommendationsLimit).ToList()
+            PopularProducts = topProducts.Take(DashboardTopProductsLimit).ToList()
         };
     }
 
@@ -64,34 +61,6 @@ public class AdminStatsService(IAdminRepository adminRepository) : IAdminStatsSe
                 ProductId = product.ProductId,
                 Name = product.Name,
                 Count = product.Count
-            })
-            .ToList();
-    }
-
-    public async Task<IReadOnlyCollection<RecommendationStatDto>?> GetRecommendationStatsAsync(
-        Guid restaurantId,
-        DateOnly? date,
-        CancellationToken cancellationToken = default)
-    {
-        if (await adminRepository.GetRestaurantAsync(restaurantId, cancellationToken) is null)
-        {
-            return null;
-        }
-
-        var (startUtc, endUtc) = BuildDateRange(date);
-        var recommendations = await adminRepository.GetTopRecommendedProductsAsync(
-            restaurantId,
-            startUtc,
-            endUtc,
-            DashboardTopRecommendationsLimit,
-            cancellationToken);
-
-        return recommendations
-            .Select(product => new RecommendationStatDto
-            {
-                ProductId = product.ProductId,
-                Name = product.Name,
-                RecommendationCount = product.Count
             })
             .ToList();
     }

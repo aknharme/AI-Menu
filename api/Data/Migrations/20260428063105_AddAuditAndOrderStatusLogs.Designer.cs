@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AiMenu.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260428063105_AddAuditAndRecommendationLogs")]
-    partial class AddAuditAndRecommendationLogs
+    [Migration("20260428063105_AddAuditAndOrderStatusLogs")]
+    partial class AddAuditAndOrderStatusLogs
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -351,38 +351,6 @@ namespace AiMenu.Api.Data.Migrations
                     b.ToTable("ProductVariants");
                 });
 
-            modelBuilder.Entity("AiMenu.Api.Entities.RecommendationLog", b =>
-                {
-                    b.Property<Guid>("RecommendationLogId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTimeOffset>("CreatedAtUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ExtractedTags")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Prompt")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.Property<string>("RecommendedProducts")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("RestaurantId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("RecommendationLogId");
-
-                    b.HasIndex("RestaurantId", "CreatedAtUtc");
-
-                    b.ToTable("RecommendationLogs");
-                });
-
             modelBuilder.Entity("AiMenu.Api.Entities.Restaurant", b =>
                 {
                     b.Property<Guid>("RestaurantId")
@@ -703,17 +671,6 @@ namespace AiMenu.Api.Data.Migrations
                     b.Navigation("Restaurant");
                 });
 
-            modelBuilder.Entity("AiMenu.Api.Entities.RecommendationLog", b =>
-                {
-                    b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
-                        .WithMany("RecommendationLogs")
-                        .HasForeignKey("RestaurantId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Restaurant");
-                });
-
             modelBuilder.Entity("AiMenu.Api.Entities.Table", b =>
                 {
                     b.HasOne("AiMenu.Api.Entities.Restaurant", "Restaurant")
@@ -795,8 +752,6 @@ namespace AiMenu.Api.Data.Migrations
 
                     b.Navigation("Products");
 
-                    b.Navigation("RecommendationLogs");
-
                     b.Navigation("Tables");
 
                     b.Navigation("Tags");
@@ -824,3 +779,5 @@ namespace AiMenu.Api.Data.Migrations
         }
     }
 }
+
+

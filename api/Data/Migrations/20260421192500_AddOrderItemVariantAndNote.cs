@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using AiMenu.Api.Data;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -61,3 +61,4 @@ namespace AiMenu.Api.Data.Migrations
         }
     }
 }
+

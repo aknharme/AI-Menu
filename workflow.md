@@ -1,4 +1,4 @@
-# FRONTEND, BACKEND, NGİNX, OLLAMA ve DATABASE
+﻿# FRONTEND, BACKEND, NGINX ve DATABASE
 
 docker compose up -d --build
 
@@ -7,7 +7,6 @@ Admin: http://localhost/admin
 Cashier: http://localhost/cashier
 Swagger: http://localhost/api/swagger/index.html
 Database: localhost:5432
-Ollama: localhost:11434
 
 DBeaver
 Host: localhost

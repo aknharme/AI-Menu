@@ -399,7 +399,7 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
         IReadOnlyCollection<string> rawTags,
         CancellationToken cancellationToken)
     {
-        var normalizedTags = TagNormalizer.NormalizeMany(rawTags)
+        var normalizedTags = NormalizeProductTags(rawTags)
             .Where(tag => !string.IsNullOrWhiteSpace(tag))
             .Take(12)
             .ToList();
@@ -430,6 +430,15 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
                 Tag = tag
             });
         }
+    }
+
+    private static IReadOnlyCollection<string> NormalizeProductTags(IReadOnlyCollection<string> rawTags)
+    {
+        return rawTags
+            .Select(tag => tag.Trim().ToLowerInvariant())
+            .Where(tag => !string.IsNullOrWhiteSpace(tag))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static AdminTableDto MapTable(Table table)

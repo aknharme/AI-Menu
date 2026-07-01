@@ -15,7 +15,6 @@ export default function AdminLayout() {
     { label: 'Muhasebe', path: '/accounting' },
     { label: 'Masalar', path: '/tables' },
     { label: 'Sipariş Logları', path: '/order-logs' },
-    { label: 'AI Test', path: '/ai-test' },
   ];
 
   function handleLogout() {

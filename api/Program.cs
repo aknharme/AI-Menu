@@ -124,15 +124,6 @@ var host = new WebHostBuilder()
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-            options.AddPolicy("PublicAi", context =>
-                RateLimitPartition.GetFixedWindowLimiter(
-                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-                    _ => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = 20,
-                        Window = TimeSpan.FromMinutes(1),
-                        QueueLimit = 0
-                    }));
             options.AddPolicy("PublicOrders", context =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -156,19 +147,11 @@ var host = new WebHostBuilder()
             options.UseNpgsql(connectionString);
         });
 
-        // Ollama ayarlari DI container'a baglanir; AI yine sadece tag uretmekle sinirlidir.
-        services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
         // JWT ayarlari login ve panel erisimleri icin tek noktadan okunur.
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
-        services.AddHttpClient<IAiTextGenerationService, OllamaTextGenerationService>((serviceProvider, client) =>
-        {
-            var ollamaOptions = serviceProvider
-                .GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>()
-                .Value;
 
-            client.BaseAddress = new Uri(ollamaOptions.BaseUrl.TrimEnd('/') + "/");
-            client.Timeout = TimeSpan.FromSeconds(Math.Max(5, ollamaOptions.TimeoutSeconds));
-        });
+        // Ollama ayarlari yerel yapay zeka servisi icin okunur.
+        services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
 
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
         if (!isDevelopment && jwtOptions.SecretKey.Contains("Local_Development", StringComparison.OrdinalIgnoreCase))
@@ -206,7 +189,6 @@ var host = new WebHostBuilder()
         services.AddScoped<IAdminCatalogRepository, AdminCatalogRepository>();
         services.AddScoped<ILogRepository, LogRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
-        services.AddScoped<IRecommendationRepository, RecommendationRepository>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ILogService, LogService>();
@@ -215,15 +197,10 @@ var host = new WebHostBuilder()
         services.AddScoped<IAdminStatsService, AdminStatsService>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
-        services.AddScoped<IRecommendationService, RecommendationService>();
-        services.AddSingleton<IAiConversationMemoryService, InMemoryAiConversationMemoryService>();
-        services.AddScoped<IAiTagService, OllamaTagService>();
-        services.AddScoped<IMessageRouterService, MessageRouterService>();
-        services.AddScoped<IAiAssistantService, AiAssistantService>();
         services.AddScoped<ICashierService, CashierService>();
-        services.AddScoped<IMenuContextService, MenuContextService>();
-        services.AddScoped<IMenuGroundingService, MenuGroundingService>();
-        services.AddScoped<IAiMessageService, AiMessageService>();
+        
+        // HttpClient ile entegre yapay zeka servisi
+        services.AddHttpClient<IAiService, AiService>();
     })
     .Configure(app =>
     {
@@ -259,9 +236,6 @@ var host = new WebHostBuilder()
             {
                 using var scope = app.ApplicationServices.CreateScope();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                var ollamaOptions = scope.ServiceProvider
-                    .GetRequiredService<Microsoft.Extensions.Options.IOptions<OllamaOptions>>()
-                    .Value;
 
                 var databaseStatus = dbContext.Database.IsRelational()
                     ? await dbContext.Database.CanConnectAsync(context.RequestAborted)
@@ -275,8 +249,6 @@ var host = new WebHostBuilder()
                 {
                     status = databaseStatus ? "healthy" : "degraded",
                     database = databaseStatus ? "ok" : "unreachable",
-                    aiProvider = "ollama",
-                    ollamaBaseUrl = ollamaOptions.BaseUrl,
                     environment = environmentName
                 });
             });

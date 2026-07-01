@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Text.Json;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Entities;
 using AiMenu.Api.Repositories.Interfaces;
@@ -33,27 +32,6 @@ public class LogService(
         };
 
         await logRepository.AddAuditLogAsync(auditLog, cancellationToken);
-        await logRepository.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task LogRecommendationAsync(
-        Guid restaurantId,
-        string prompt,
-        IReadOnlyCollection<string> extractedTags,
-        IReadOnlyCollection<Guid> recommendedProductIds,
-        CancellationToken cancellationToken = default)
-    {
-        var recommendationLog = new RecommendationLog
-        {
-            RecommendationLogId = Guid.NewGuid(),
-            RestaurantId = restaurantId,
-            Prompt = prompt,
-            ExtractedTags = JsonSerializer.Serialize(extractedTags),
-            RecommendedProducts = JsonSerializer.Serialize(recommendedProductIds),
-            CreatedAtUtc = DateTimeOffset.UtcNow
-        };
-
-        await logRepository.AddRecommendationLogAsync(recommendationLog, cancellationToken);
         await logRepository.SaveChangesAsync(cancellationToken);
     }
 
@@ -103,27 +81,6 @@ public class LogService(
             .ToList();
     }
 
-    public async Task<IReadOnlyCollection<RecommendationLogDto>?> GetRecommendationLogsAsync(Guid restaurantId, CancellationToken cancellationToken = default)
-    {
-        if (await logRepository.GetRestaurantAsync(restaurantId, cancellationToken) is null)
-        {
-            return null;
-        }
-
-        var logs = await logRepository.GetRecommendationLogsAsync(restaurantId, cancellationToken);
-        return logs
-            .Select(log => new RecommendationLogDto
-            {
-                Id = log.RecommendationLogId,
-                RestaurantId = log.RestaurantId,
-                Prompt = log.Prompt,
-                ExtractedTags = DeserializeStrings(log.ExtractedTags),
-                RecommendedProducts = DeserializeGuids(log.RecommendedProducts),
-                CreatedAt = log.CreatedAtUtc
-            })
-            .ToList();
-    }
-
     public async Task<IReadOnlyCollection<OrderStatusLogDto>?> GetOrderStatusLogsAsync(Guid restaurantId, CancellationToken cancellationToken = default)
     {
         if (await logRepository.GetRestaurantAsync(restaurantId, cancellationToken) is null)
@@ -153,27 +110,4 @@ public class LogService(
         return Guid.TryParse(userIdClaim, out var userId) ? userId : null;
     }
 
-    private static IReadOnlyCollection<string> DeserializeStrings(string json)
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<List<string>>(json) ?? [];
-        }
-        catch
-        {
-            return [];
-        }
-    }
-
-    private static IReadOnlyCollection<Guid> DeserializeGuids(string json)
-    {
-        try
-        {
-            return JsonSerializer.Deserialize<List<Guid>>(json) ?? [];
-        }
-        catch
-        {
-            return [];
-        }
-    }
 }

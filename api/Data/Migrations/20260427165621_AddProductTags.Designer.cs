@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AiMenu.Api.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260427165621_AddRecommendationTags")]
-    partial class AddRecommendationTags
+    [Migration("20260427165621_AddProductTags")]
+    partial class AddProductTags
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -562,3 +562,4 @@ namespace AiMenu.Api.Data.Migrations
         }
     }
 }
+

@@ -20,7 +20,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<OrderItem> OrderItems => Set<OrderItem>();
     public DbSet<User> Users => Set<User>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
-    public DbSet<RecommendationLog> RecommendationLogs => Set<RecommendationLog>();
     public DbSet<OrderStatusLog> OrderStatusLogs => Set<OrderStatusLog>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -70,22 +69,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
                 .WithMany(x => x.AuditLogs)
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.SetNull);
-
-            entity.HasIndex(x => new { x.RestaurantId, x.CreatedAtUtc });
-        });
-
-        modelBuilder.Entity<RecommendationLog>(entity =>
-        {
-            // Prompt, tag listesi ve onerilen urun id'leri JSON string olarak saklanir.
-            entity.HasKey(x => x.RecommendationLogId);
-            entity.Property(x => x.Prompt).HasMaxLength(1000).IsRequired();
-            entity.Property(x => x.ExtractedTags).HasColumnType("text").IsRequired();
-            entity.Property(x => x.RecommendedProducts).HasColumnType("text").IsRequired();
-
-            entity.HasOne(x => x.Restaurant)
-                .WithMany(x => x.RecommendationLogs)
-                .HasForeignKey(x => x.RestaurantId)
-                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasIndex(x => new { x.RestaurantId, x.CreatedAtUtc });
         });
