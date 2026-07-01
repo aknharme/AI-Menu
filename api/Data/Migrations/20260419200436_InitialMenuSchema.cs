@@ -356,3 +356,4 @@ namespace AiMenu.Api.Data.Migrations
         }
     }
 }
+

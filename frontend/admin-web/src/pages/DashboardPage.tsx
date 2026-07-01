@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import StatCard from '../components/StatCard';
 import { useRestaurantContext } from '../hooks/useRestaurantContext';
@@ -6,14 +6,12 @@ import {
   getAdminOrders,
   getDashboard,
   getRecentOrders,
-  getRecommendationStats,
   getTopProducts,
 } from '../services/adminService';
 import type {
   AdminOrderListItem,
   DashboardSummary,
   RecentOrder,
-  RecommendationStat,
   TopProduct,
 } from '../types/admin';
 
@@ -22,7 +20,6 @@ export default function DashboardPage() {
   const { customerBaseUrl, restaurantId } = useRestaurantContext();
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
-  const [recommendations, setRecommendations] = useState<RecommendationStat[]>([]);
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [liveOrders, setLiveOrders] = useState<AdminOrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,14 +36,12 @@ export default function DashboardPage() {
         const [
           summaryResponse,
           topProductsResponse,
-          recommendationResponse,
           recentOrdersResponse,
           liveOrdersResponse,
         ] =
           await Promise.all([
             getDashboard(restaurantId),
             getTopProducts(restaurantId),
-            getRecommendationStats(restaurantId),
             getRecentOrders(restaurantId),
             getAdminOrders(restaurantId),
           ]);
@@ -57,7 +52,6 @@ export default function DashboardPage() {
 
         setSummary(summaryResponse);
         setTopProducts(topProductsResponse);
-        setRecommendations(recommendationResponse);
         setRecentOrders(recentOrdersResponse);
         setLiveOrders(liveOrdersResponse);
       } catch {
@@ -81,7 +75,7 @@ export default function DashboardPage() {
   }, [restaurantId]);
 
   const hasAnyListData =
-    topProducts.length > 0 || recommendations.length > 0 || recentOrders.length > 0;
+    topProducts.length > 0 || recentOrders.length > 0;
   const pendingCount = liveOrders.filter((order) => order.status === 'Pending').length;
   const liveCount = liveOrders.filter((order) =>
     ['Pending', 'Preparing', 'Ready'].includes(order.status),
@@ -145,59 +139,7 @@ export default function DashboardPage() {
       )}
 
       {!loading && !error ? (
-        <section className="grid gap-6 lg:grid-cols-3">
-          <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm shadow-stone-950/5 lg:col-span-1">
-            <h3 className="text-base font-semibold text-stone-950">En Çok Satanlar</h3>
-            <div className="mt-4 space-y-3">
-              {topProducts.length === 0 ? (
-                <p className="rounded-2xl bg-stone-50 px-4 py-6 text-sm text-stone-500">
-                  Henuz siparis verisi yok.
-                </p>
-              ) : (
-                topProducts.map((product, index) => (
-                  <div
-                    key={product.productId}
-                    className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-stone-900">
-                        {index + 1}. {product.name}
-                      </p>
-                    </div>
-                    <span className="text-sm font-semibold text-stone-700">{product.count}</span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm shadow-stone-950/5 lg:col-span-1">
-            <h3 className="text-base font-semibold text-stone-950">En Çok Önerilenler</h3>
-            <div className="mt-4 space-y-3">
-              {recommendations.length === 0 ? (
-                <p className="rounded-2xl bg-stone-50 px-4 py-6 text-sm text-stone-500">
-                  Henuz recommendation verisi yok.
-                </p>
-              ) : (
-                recommendations.map((product, index) => (
-                  <div
-                    key={product.productId}
-                    className="flex items-center justify-between rounded-2xl bg-stone-50 px-4 py-3"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-stone-900">
-                        {index + 1}. {product.name}
-                      </p>
-                    </div>
-                    <span className="text-sm font-semibold text-stone-700">
-                      {product.recommendationCount}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
+        <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm shadow-stone-950/5 lg:col-span-1">
             <h3 className="text-base font-semibold text-stone-950">Son Siparişler</h3>
             <div className="mt-4 space-y-3">
@@ -231,7 +173,7 @@ export default function DashboardPage() {
 
       {!loading && !error && !hasAnyListData ? (
         <section className="rounded-[28px] border border-stone-200 bg-white p-6 text-sm text-stone-500 shadow-sm shadow-stone-950/5">
-          Dashboard için henuz yeterli hareket verisi yok. Ilk siparisler ve recommendation kayitlari geldikce bu alan otomatik dolacak.
+          Dashboard için henuz yeterli hareket verisi yok. Ilk siparisler geldikce bu alan otomatik dolacak.
         </section>
       ) : null}
 
@@ -274,3 +216,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+

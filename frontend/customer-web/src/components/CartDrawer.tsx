@@ -60,17 +60,17 @@ export default function CartDrawer({
   };
 
   const statusTone: Record<string, string> = {
-    Pending: 'border-amber-200 bg-amber-50 text-amber-900',
-    Preparing: 'border-sky-200 bg-sky-50 text-sky-900',
-    Ready: 'border-emerald-200 bg-emerald-50 text-emerald-900',
-    Paid: 'border-stone-200 bg-stone-100 text-stone-800',
+    Pending: 'border-[#d8b95f] bg-[#fff8e9] text-[#14351f]',
+    Preparing: 'border-[#d8b95f] bg-[#f4ead4] text-[#14351f]',
+    Ready: 'border-[#cfe0c6] bg-[#e7f0df] text-[#14351f]',
+    Paid: 'border-[#d8c998] bg-[#fff8e9] text-[#38543f]',
     Cancelled: 'border-rose-200 bg-rose-50 text-rose-800',
   };
 
   const orderSteps = [
-    { key: 'Pending', label: 'Alındı' },
-    { key: 'Preparing', label: 'Onaylandı' },
-    { key: 'Ready', label: 'Hazırlanıyor' },
+    { key: 'Pending', label: 'Alindi' },
+    { key: 'Preparing', label: 'Onaylandi' },
+    { key: 'Ready', label: 'Hazirlaniyor' },
     { key: 'Paid', label: 'Teslim edildi' },
   ];
 
@@ -163,22 +163,22 @@ export default function CartDrawer({
 
   async function handleSubmit() {
     if (!restaurantId || !tableId || cartItems.length === 0) {
-      setError('Sipariş göndermek için restoran, masa ve en az bir ürün gerekli.');
+      setError('Siparis gondermek icin restoran, masa ve en az bir urun gerekli.');
       return;
     }
 
     if (customerName.trim().length > 120) {
-      setError('Müşteri adı en fazla 120 karakter olabilir.');
+      setError('Musteri adi en fazla 120 karakter olabilir.');
       return;
     }
 
     if (orderNote.trim().length > 500) {
-      setError('Sipariş notu en fazla 500 karakter olabilir.');
+      setError('Siparis notu en fazla 500 karakter olabilir.');
       return;
     }
 
     if (cartItems.some((item) => item.note.trim().length > 500)) {
-      setError('Ürün notları en fazla 500 karakter olabilir.');
+      setError('Urun notlari en fazla 500 karakter olabilir.');
       return;
     }
 
@@ -225,19 +225,19 @@ export default function CartDrawer({
   const activeStepIndex = orderSteps.findIndex((step) => step.key === createdOrder?.status);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center bg-stone-950/55 p-0 sm:p-6">
-      <div className="flex max-h-[94dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[28px] bg-white shadow-2xl sm:rounded-[28px]">
-        <div className="flex shrink-0 items-center justify-between border-b border-stone-200 px-4 py-4">
+    <div className="fixed inset-0 z-40 flex items-end justify-center bg-[#0b2012]/70 p-0 sm:p-6">
+      <div className="flex max-h-[94dvh] w-full max-w-md flex-col overflow-hidden rounded-t-[28px] bg-[#fff8e9] shadow-2xl sm:rounded-[28px]">
+        <div className="flex shrink-0 items-center justify-between border-b border-[#d8c998] px-4 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#b3903f]">
               Sipariş Özeti
             </p>
-            <h2 className="mt-1 text-xl font-semibold text-stone-950">Sepet</h2>
+            <h2 className="pub-display mt-1 text-xl font-bold text-[#14351f]">Sepet</h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 rounded-full border border-stone-200 px-3 py-2 text-sm font-semibold text-stone-600"
+            className="shrink-0 rounded-full border border-[#d8c998] bg-[#f4ead4] px-3 py-2 text-sm font-semibold text-[#14351f] active:scale-[0.98]"
           >
             Kapat
           </button>
@@ -245,7 +245,7 @@ export default function CartDrawer({
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
           {!tableId && (
-            <div className="rounded-3xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <div className="rounded-3xl border border-[#d8b95f] bg-[#f4ead4] p-4 text-sm text-[#14351f]">
               Sipariş gönderebilmek için masaya özel QR bağlantısından gelmen gerekiyor.
             </div>
           )}
@@ -294,7 +294,7 @@ export default function CartDrawer({
                     <div key={step.key} className="space-y-2">
                       <div
                         className={`h-2 rounded-full ${
-                          isDone ? 'bg-current' : 'bg-white/60'
+                          isDone ? 'bg-current' : 'bg-current/10'
                         }`}
                       />
                       <p className={`text-xs ${isCurrent ? 'font-semibold' : 'opacity-75'}`}>
@@ -339,7 +339,7 @@ export default function CartDrawer({
           {error ? <InlineAlert message={error} /> : null}
 
           {cartItems.length === 0 ? (
-            <div className="rounded-[28px] border border-dashed border-stone-300 bg-stone-50 px-6 py-10 text-center text-sm text-stone-500">
+            <div className="rounded-[28px] border border-dashed border-[#d8c998] bg-[#f4ead4] px-6 py-10 text-center text-sm text-[#52624a]">
               {createdOrder
                 ? 'Aktif siparişin yukarıda görünüyor. Yeni ürün eklemek istersen menüden seçim yapabilirsin.'
                 : 'Sepetin şu anda boş. Menüden ürün seçerek siparişini oluşturmaya başlayabilirsin.'}
@@ -349,62 +349,62 @@ export default function CartDrawer({
               {cartItems.map((item) => (
                 <article
                   key={item.cartItemId}
-                  className="rounded-[24px] border border-stone-200 bg-white p-4 shadow-sm shadow-stone-950/5"
+                  className="rounded-[24px] border border-[#d8c998] bg-white p-4 shadow-sm shadow-[#14351f]/5"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#b3903f]">
                         {item.categoryName}
                       </p>
-                      <h3 className="mt-2 line-clamp-2 text-base font-semibold leading-6 text-stone-950">
+                      <h3 className="pub-display mt-2 line-clamp-2 text-base font-bold leading-6 text-[#14351f]">
                         {item.productName}
                       </h3>
                       {item.variantName && (
-                        <p className="mt-1 text-sm text-stone-500">Varyant: {item.variantName}</p>
+                        <p className="mt-1 text-sm text-[#52624a]">Varyant: {item.variantName}</p>
                       )}
                     </div>
                     <button
                       type="button"
                       onClick={() => removeFromCart(item.cartItemId)}
-                      className="shrink-0 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600"
+                      className="shrink-0 rounded-full bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 active:scale-[0.98]"
                     >
                       Çıkar
                     </button>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="inline-flex items-center rounded-full border border-stone-200 bg-stone-50 p-1">
+                    <div className="inline-flex items-center rounded-full border border-[#d8c998] bg-[#f4ead4] p-1">
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.cartItemId, item.quantity - 1)}
-                        className="rounded-full px-3 py-1.5 text-sm text-stone-700"
+                        className="rounded-full px-3 py-1.5 text-sm text-[#14351f]"
                       >
                         -
                       </button>
-                      <span className="min-w-10 text-center text-sm font-semibold text-stone-950">
+                      <span className="min-w-10 text-center text-sm font-semibold text-[#14351f]">
                         {item.quantity}
                       </span>
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.cartItemId, item.quantity + 1)}
-                        className="rounded-full px-3 py-1.5 text-sm text-stone-700"
+                        className="rounded-full px-3 py-1.5 text-sm text-[#14351f]"
                       >
                         +
                       </button>
                     </div>
-                    <p className="text-base font-semibold text-stone-950">
+                    <p className="rounded-full bg-[#e7f0df] px-3 py-1.5 text-base font-semibold text-[#14351f] ring-1 ring-[#cfe0c6]">
                       {formatPrice(item.unitPrice * item.quantity)}
                     </p>
                   </div>
 
                   <label className="mt-4 block">
-                    <span className="text-sm font-medium text-stone-700">Ürün notu</span>
+                    <span className="text-sm font-medium text-[#14351f]">Ürün notu</span>
                     <textarea
                       value={item.note}
                       onChange={(event) => updateItemNote(item.cartItemId, event.target.value)}
                       maxLength={500}
                       rows={2}
-                      className="mt-2 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400 focus:bg-white"
+                      className="mt-2 w-full rounded-2xl border border-[#d8c998] bg-[#fff8e9] px-4 py-3 text-sm text-[#14351f] outline-none transition focus:border-[#d8b95f] focus:bg-white"
                       placeholder="Örn. soğansız, az buzlu"
                     />
                   </label>
@@ -414,34 +414,34 @@ export default function CartDrawer({
           )}
 
           {cartItems.length > 0 ? (
-            <section className="rounded-[28px] border border-stone-200 bg-stone-50 p-4">
+            <section className="rounded-[28px] border border-[#d8c998] bg-[#f4ead4] p-4">
               <div className="mb-3">
-                <p className="text-sm font-semibold text-stone-900">Sipariş bilgisi</p>
-                <p className="mt-1 text-xs leading-5 text-stone-500">
+                <p className="text-sm font-semibold text-[#14351f]">Sipariş bilgisi</p>
+                <p className="mt-1 text-xs leading-5 text-[#52624a]">
                   İsmini ve varsa genel sipariş notunu buraya yazabilirsin.
                 </p>
               </div>
 
               <div className="grid gap-4">
                 <label className="block">
-                  <span className="text-sm font-medium text-stone-700">Müşteri adı</span>
+                  <span className="text-sm font-medium text-[#14351f]">Müşteri adı</span>
                   <input
                     ref={customerNameInputRef}
                     value={customerName}
                     onChange={(event) => setCustomerName(event.target.value)}
                     maxLength={120}
-                    className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
+                    className="mt-2 w-full rounded-2xl border border-[#d8c998] bg-white px-4 py-3 text-sm text-[#14351f] outline-none transition focus:border-[#d8b95f]"
                     placeholder="Adını yazabilirsin"
                   />
                 </label>
 
                 <label className="block">
-                  <span className="text-sm font-medium text-stone-700">Sipariş notu</span>
+                  <span className="text-sm font-medium text-[#14351f]">Sipariş notu</span>
                   <input
                     value={orderNote}
                     onChange={(event) => setOrderNote(event.target.value)}
                     maxLength={500}
-                    className="mt-2 w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm text-stone-800 outline-none transition focus:border-stone-400"
+                    className="mt-2 w-full rounded-2xl border border-[#d8c998] bg-white px-4 py-3 text-sm text-[#14351f] outline-none transition focus:border-[#d8b95f]"
                     placeholder="Örn. önce içecekler gelsin"
                   />
                 </label>
@@ -450,29 +450,31 @@ export default function CartDrawer({
           ) : null}
         </div>
 
-        <div className="shrink-0 border-t border-stone-200 bg-white px-4 py-4">
+        <div className="shrink-0 border-t border-[#d8c998] bg-[#fff8e9] px-4 py-4">
           <div className="mb-4 flex items-center justify-between text-sm">
-            <span className="text-stone-500">Toplam</span>
-            <span className="text-lg font-semibold text-stone-950">{formatPrice(totalPrice)}</span>
+            <span className="text-[#52624a]">Toplam</span>
+            <span className="rounded-full bg-[#e7f0df] px-3 py-1.5 text-lg font-semibold text-[#14351f] ring-1 ring-[#cfe0c6]">
+              {formatPrice(totalPrice)}
+            </span>
           </div>
           {cartItems.length > 0 ? (
             <button
               type="button"
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="w-full rounded-2xl bg-stone-950 px-4 py-3 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-2xl bg-[#14351f] px-4 py-3 text-sm font-semibold text-[#f8efd9] transition active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-[#e8ddbf] disabled:text-[#6d775e]"
             >
               {submitting ? 'Sipariş gönderiliyor...' : 'Siparişi gönder'}
             </button>
           ) : createdOrder ? (
-            <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-center text-sm font-medium text-stone-600">
+            <div className="rounded-2xl border border-[#d8c998] bg-[#f4ead4] px-4 py-3 text-center text-sm font-medium text-[#38543f]">
               Aktif siparişin takip ediliyor.
             </div>
           ) : (
             <button
               type="button"
               disabled
-              className="w-full rounded-2xl bg-stone-300 px-4 py-3 text-sm font-semibold text-white"
+              className="w-full rounded-2xl bg-[#e8ddbf] px-4 py-3 text-sm font-semibold text-[#6d775e]"
             >
               Siparişi gönder
             </button>

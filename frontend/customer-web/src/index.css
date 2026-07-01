@@ -2,12 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: "Irish Penny";
+  src:
+    url("https://db.onlinewebfonts.com/t/4fe62cacc1c94907326fd5cc899216aa.woff2") format("woff2"),
+    url("https://db.onlinewebfonts.com/t/4fe62cacc1c94907326fd5cc899216aa.woff") format("woff"),
+    url("https://db.onlinewebfonts.com/t/4fe62cacc1c94907326fd5cc899216aa.ttf") format("truetype");
+  font-display: swap;
+}
+
 :root {
-  color: #1c1917;
-  background: #fffbeb;
+  color: #1b1b16;
+  background: #16351f;
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+    Georgia, "Times New Roman", ui-serif, serif;
 }
 
 * {
@@ -24,47 +32,11 @@ button {
   font: inherit;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.pub-display {
+  font-family: "Irish Penny", Georgia, "Times New Roman", ui-serif, serif;
+  letter-spacing: 0.04em;
 }
 
-.animate-fade-in-up {
-  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+.pub-script {
+  font-family: "Brush Script MT", "Segoe Script", cursive;
 }
-
-@keyframes breatheGlow {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.4), 0 0 0 0 rgba(16, 185, 129, 0.3);
-  }
-  50% {
-    transform: scale(1.05);
-    box-shadow: 0 15px 30px -5px rgba(16, 185, 129, 0.5), 0 0 0 10px rgba(16, 185, 129, 0);
-  }
-}
-
-.animate-breathe-glow {
-  animation: breatheGlow 3s ease-in-out infinite;
-}
-
-@keyframes slideUp {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-.animate-slide-up {
-  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-

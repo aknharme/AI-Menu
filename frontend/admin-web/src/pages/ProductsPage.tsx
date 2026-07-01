@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+﻿import { FormEvent, useEffect, useMemo, useState } from 'react';
 import EmptyState from '../components/EmptyState';
 import InlineAlert from '../components/InlineAlert';
 import LoadingState from '../components/LoadingState';
@@ -318,7 +318,7 @@ export default function ProductsPage() {
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700">AI Etiketleri</span>
+            <span className="text-sm font-medium text-stone-700">Etiketler</span>
             <input
               value={form.tags}
               onChange={(event) => setForm((current) => ({ ...current, tags: event.target.value }))}
@@ -326,7 +326,7 @@ export default function ProductsPage() {
               className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
             />
             <p className="text-xs leading-5 text-stone-500">
-              Virgül ile ayırın. Bu etiketler müşteriye gösterilmez, AI eşleştirmesinde kullanılır.
+              Virgül ile ayırın. Bu etiketler ürünleri gruplamak ve aramada bulmak için kullanılır.
             </p>
           </label>
 
@@ -395,7 +395,7 @@ export default function ProductsPage() {
                     <p className="text-sm font-medium text-stone-500">{product.content || 'İçerik yok'}</p>
                     {product.tags.length > 0 ? (
                       <p className="text-xs font-medium text-amber-700">
-                        AI etiketleri: {product.tags.join(', ')}
+                        Etiketler: {product.tags.join(', ')}
                       </p>
                     ) : null}
                   </div>
@@ -436,3 +436,4 @@ export default function ProductsPage() {
     </div>
   );
 }
+

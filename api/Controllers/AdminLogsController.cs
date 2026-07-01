@@ -30,23 +30,6 @@ public class AdminLogsController(ILogService logService) : ControllerBase
             : Ok(logs);
     }
 
-    [HttpGet("recommendations/{restaurantId:guid}")]
-    [ProducesResponseType(typeof(IReadOnlyCollection<RecommendationLogDto>), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ApiErrorResponseDto), StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(ApiErrorResponseDto), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetRecommendationLogs(Guid restaurantId, CancellationToken cancellationToken)
-    {
-        if (!IsRestaurantAccessAllowed(restaurantId))
-        {
-            return Forbid();
-        }
-
-        var logs = await logService.GetRecommendationLogsAsync(restaurantId, cancellationToken);
-        return logs is null
-            ? NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound))
-            : Ok(logs);
-    }
-
     [HttpGet("orders/{restaurantId:guid}")]
     [ProducesResponseType(typeof(IReadOnlyCollection<OrderStatusLogDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ApiErrorResponseDto), StatusCodes.Status403Forbidden)]

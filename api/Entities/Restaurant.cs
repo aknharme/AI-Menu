@@ -23,6 +23,5 @@ public class Restaurant
     public ICollection<User> Users { get; set; } = new List<User>();
     // Audit ve is akisi loglari restoran bazinda ayristrilarak tutulur.
     public ICollection<AuditLog> AuditLogs { get; set; } = new List<AuditLog>();
-    public ICollection<RecommendationLog> RecommendationLogs { get; set; } = new List<RecommendationLog>();
     public ICollection<OrderStatusLog> OrderStatusLogs { get; set; } = new List<OrderStatusLog>();
 }

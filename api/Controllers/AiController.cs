@@ -1,33 +1,44 @@
 using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
 
 namespace AiMenu.Api.Controllers;
 
 [ApiController]
 [Route("api/ai")]
-public class AiController(IAiMessageService aiMessageService) : ControllerBase
+public class AiController(IAiService aiService) : ControllerBase
 {
-    [HttpPost("message")]
-    [ProducesResponseType(typeof(AiMessageResponseDto), StatusCodes.Status200OK)]
+    /// <summary>
+    /// Müşterinin web arayüzünden gönderdiği mesaja karşılık, 
+    /// veritabanı ürün listesini de katarak local AI modelinden (Ollama) cevap döner.
+    /// </summary>
+    [HttpPost("{restaurantId:guid}/chat")]
+    [ProducesResponseType(typeof(AiChatResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [EnableRateLimiting("PublicAi")]
-    public async Task<IActionResult> SendMessage([FromBody] AiMessageRequestDto request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Chat(
+        Guid restaurantId, 
+        [FromBody] AiChatRequestDto request, 
+        CancellationToken cancellationToken)
     {
-        if (request.RestaurantId == Guid.Empty || string.IsNullOrWhiteSpace(request.Message))
+        if (restaurantId == Guid.Empty)
         {
-            return BadRequest(ApiErrorResponseDto.Create("Restaurant id and message are required.", ApiErrorCodes.BadRequest));
+            return BadRequest(ApiErrorResponseDto.Create("Restaurant id is required.", ApiErrorCodes.BadRequest));
         }
 
-        var response = await aiMessageService.HandleAsync(request, cancellationToken);
-        if (response is null)
+        if (request == null || string.IsNullOrWhiteSpace(request.Message))
+        {
+            return BadRequest(ApiErrorResponseDto.Create("Message content cannot be empty.", ApiErrorCodes.BadRequest));
+        }
+
+        var result = await aiService.ChatAsync(restaurantId, request, cancellationToken);
+        if (result == null)
         {
             return NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound));
         }
 
-        return Ok(response);
+        return Ok(result);
     }
 }

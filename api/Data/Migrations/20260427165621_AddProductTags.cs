@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AiMenu.Api.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddRecommendationTags : Migration
+    public partial class AddProductTags : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -202,3 +202,4 @@ namespace AiMenu.Api.Data.Migrations
         }
     }
 }
+

@@ -20,11 +20,6 @@ public class LogRepository(AppDbContext dbContext) : ILogRepository
         await dbContext.AuditLogs.AddAsync(auditLog, cancellationToken);
     }
 
-    public async Task AddRecommendationLogAsync(RecommendationLog recommendationLog, CancellationToken cancellationToken = default)
-    {
-        await dbContext.RecommendationLogs.AddAsync(recommendationLog, cancellationToken);
-    }
-
     public async Task AddOrderStatusLogAsync(OrderStatusLog orderStatusLog, CancellationToken cancellationToken = default)
     {
         await dbContext.OrderStatusLogs.AddAsync(orderStatusLog, cancellationToken);
@@ -33,15 +28,6 @@ public class LogRepository(AppDbContext dbContext) : ILogRepository
     public async Task<IReadOnlyCollection<AuditLog>> GetAuditLogsAsync(Guid restaurantId, CancellationToken cancellationToken = default)
     {
         return await dbContext.AuditLogs
-            .AsNoTracking()
-            .Where(log => log.RestaurantId == restaurantId)
-            .OrderByDescending(log => log.CreatedAtUtc)
-            .ToListAsync(cancellationToken);
-    }
-
-    public async Task<IReadOnlyCollection<RecommendationLog>> GetRecommendationLogsAsync(Guid restaurantId, CancellationToken cancellationToken = default)
-    {
-        return await dbContext.RecommendationLogs
             .AsNoTracking()
             .Where(log => log.RestaurantId == restaurantId)
             .OrderByDescending(log => log.CreatedAtUtc)

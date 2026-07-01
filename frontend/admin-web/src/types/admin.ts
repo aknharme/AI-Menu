@@ -73,7 +73,6 @@ export type DashboardSummary = {
   recentOrders: RecentOrder[];
   topProducts: TopProduct[];
   popularProducts: TopProduct[];
-  topRecommendedProducts: RecommendationStat[];
 };
 
 // TopProduct, en cok siparis edilen veya gunun populer urunlerini ayni tip ile temsil eder.
@@ -93,13 +92,6 @@ export type RecentOrder = {
   createdAtUtc: string;
 };
 
-// RecommendationStat, onerilerde en cok gecen urunlerin toplamini gosterir.
-export type RecommendationStat = {
-  productId: string;
-  name: string;
-  recommendationCount: number;
-};
-
 // OrderStatusLog, admin panelde siparis durum gecmisini gosteren API modelidir.
 export type OrderStatusLog = {
   id: string;
@@ -111,6 +103,8 @@ export type OrderStatusLog = {
   newStatus: string;
   changedByUserId: string | null;
   changedAt: string;
+};
+
 export type AdminOrderStatus =
   | 'Pending'
   | 'Preparing'
@@ -148,26 +142,8 @@ export type AdminOrderDetail = {
   tableName: string;
   customerName: string;
   note: string;
-  status: string;
   status: AdminOrderStatus;
   createdAtUtc: string;
   totalAmount: number;
   items: AdminOrderItem[];
-};
-
-export type AdminAiGroundedProduct = {
-  productId: string;
-  name: string;
-  categoryName: string;
-  price: number;
-  description: string;
-  tags: string[];
-};
-
-export type AdminAiTestResponse = {
-  intent: string;
-  queryType: string;
-  hasSpecificGrounding: boolean;
-  reply: string;
-  groundedProducts: AdminAiGroundedProduct[];
 };

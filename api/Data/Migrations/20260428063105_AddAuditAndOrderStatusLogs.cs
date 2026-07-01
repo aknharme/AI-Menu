@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace AiMenu.Api.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddAuditAndRecommendationLogs : Migration
+    public partial class AddAuditAndOrderStatusLogs : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -76,28 +76,6 @@ namespace AiMenu.Api.Data.Migrations
                         onDelete: ReferentialAction.SetNull);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "RecommendationLogs",
-                columns: table => new
-                {
-                    RecommendationLogId = table.Column<Guid>(type: "uuid", nullable: false),
-                    RestaurantId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Prompt = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: false),
-                    ExtractedTags = table.Column<string>(type: "text", nullable: false),
-                    RecommendedProducts = table.Column<string>(type: "text", nullable: false),
-                    CreatedAtUtc = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_RecommendationLogs", x => x.RecommendationLogId);
-                    table.ForeignKey(
-                        name: "FK_RecommendationLogs_Restaurants_RestaurantId",
-                        column: x => x.RestaurantId,
-                        principalTable: "Restaurants",
-                        principalColumn: "RestaurantId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "IX_AuditLogs_RestaurantId_CreatedAtUtc",
                 table: "AuditLogs",
@@ -123,10 +101,6 @@ namespace AiMenu.Api.Data.Migrations
                 table: "OrderStatusLogs",
                 columns: new[] { "RestaurantId", "ChangedAtUtc" });
 
-            migrationBuilder.CreateIndex(
-                name: "IX_RecommendationLogs_RestaurantId_CreatedAtUtc",
-                table: "RecommendationLogs",
-                columns: new[] { "RestaurantId", "CreatedAtUtc" });
         }
 
         /// <inheritdoc />
@@ -137,9 +111,8 @@ namespace AiMenu.Api.Data.Migrations
 
             migrationBuilder.DropTable(
                 name: "OrderStatusLogs");
-
-            migrationBuilder.DropTable(
-                name: "RecommendationLogs");
         }
     }
 }
+
+

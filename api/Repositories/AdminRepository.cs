@@ -2,7 +2,6 @@ using AiMenu.Api.Data;
 using AiMenu.Api.Entities;
 using AiMenu.Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 
 namespace AiMenu.Api.Repositories;
 
@@ -205,65 +204,6 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
             .ToListAsync(cancellationToken);
 
         return data.Select(result => (result.ProductId, result.Name, result.Count)).ToList();
-    }
-
-    public async Task<IReadOnlyCollection<(Guid ProductId, string Name, int Count)>> GetTopRecommendedProductsAsync(
-        Guid restaurantId,
-        DateTimeOffset? startUtc,
-        DateTimeOffset? endUtc,
-        int limit,
-        CancellationToken cancellationToken = default)
-    {
-        var query = dbContext.RecommendationLogs
-            .AsNoTracking()
-            .Where(log => log.RestaurantId == restaurantId);
-
-        if (startUtc.HasValue)
-        {
-            query = query.Where(log => log.CreatedAtUtc >= startUtc.Value);
-        }
-
-        if (endUtc.HasValue)
-        {
-            query = query.Where(log => log.CreatedAtUtc < endUtc.Value);
-        }
-
-        var logs = await query.ToListAsync(cancellationToken);
-        var counts = new Dictionary<Guid, int>();
-
-        foreach (var log in logs)
-        {
-            try
-            {
-                var productIds = JsonSerializer.Deserialize<List<Guid>>(log.RecommendedProducts) ?? [];
-                foreach (var productId in productIds)
-                {
-                    counts[productId] = counts.TryGetValue(productId, out var currentCount) ? currentCount + 1 : 1;
-                }
-            }
-            catch
-            {
-                // Parse edilemeyen eski kayitlar analitigi bozmasin diye sessizce atlanir.
-            }
-        }
-
-        if (counts.Count == 0)
-        {
-            return [];
-        }
-
-        var productNames = await dbContext.Products
-            .AsNoTracking()
-            .Where(product => product.RestaurantId == restaurantId && counts.Keys.Contains(product.ProductId))
-            .ToDictionaryAsync(product => product.ProductId, product => product.Name, cancellationToken);
-
-        return counts
-            .Where(result => productNames.ContainsKey(result.Key))
-            .OrderByDescending(result => result.Value)
-            .ThenBy(result => productNames[result.Key])
-            .Take(limit)
-            .Select(result => (result.Key, productNames[result.Key], result.Value))
-            .ToList();
     }
 
     private IQueryable<Order> BuildOrderQuery(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc)

@@ -1,8 +1,8 @@
 namespace AiMenu.Api.Options;
 
+// OllamaOptions, yerel yapay zeka servisi baglanti ve model ayarlarini tasir.
 public class OllamaOptions
 {
     public string BaseUrl { get; set; } = "http://localhost:11434";
-    public string Model { get; set; } = "qwen2.5:3b";
-    public int TimeoutSeconds { get; set; } = 30;
+    public string Model { get; set; } = "llama3";
 }

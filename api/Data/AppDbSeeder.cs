@@ -1,4 +1,4 @@
-using AiMenu.Api.Entities;
+﻿using AiMenu.Api.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -102,7 +102,7 @@ public static class AppDbSeeder
             }
         };
 
-        // Demo urunleri, admin ve recommendation sunumunda hem aktif hem pasif senaryolarini gosterecek sekilde secildi.
+        // Demo urunleri, admin sunumunda hem aktif hem pasif senaryolarini gosterecek sekilde secildi.
         var products = new List<Product>
         {
             new Product
@@ -217,7 +217,7 @@ public static class AppDbSeeder
             }
         };
 
-        // Tag sozlugu, Ollama'nin urettigi etiketlerle urunlerin hizli eslesmesi icin sade anahtar kelimeler tutar.
+        // Tag sozlugu, urunleri sade anahtar kelimelerle gruplayabilmek icin tutulur.
         var tags = new List<Tag>
         {
             new Tag { TagId = sogukTagId, RestaurantId = restaurantId, Name = "soguk", NormalizedName = "soguk" },
@@ -234,7 +234,7 @@ public static class AppDbSeeder
             new Tag { TagId = doyurucuTagId, RestaurantId = restaurantId, Name = "doyurucu", NormalizedName = "doyurucu" }
         };
 
-        // ProductTags, recommendation endpoint'inin basic relevance hesaplamasi icin dogrudan kullandigi iliskidir.
+        // ProductTags, urunlerin etiketlerle eslesmesini saglayan iliskidir.
         var productTags = new List<ProductTag>
         {
             new ProductTag { ProductTagId = Guid.Parse("55555555-5555-5555-5555-555555555551"), RestaurantId = restaurantId, ProductId = colaProductId, TagId = sogukTagId },
@@ -525,38 +525,6 @@ public static class AppDbSeeder
             }
         };
 
-        // Recommendation loglari, dashboard'daki onerilen urun istatistiklerinin demo acilisinda dolu gelmesini saglar.
-        var recommendationLogs = new List<RecommendationLog>
-        {
-            new RecommendationLog
-            {
-                RecommendationLogId = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc1"),
-                RestaurantId = restaurantId,
-                Prompt = "hafif ama doyurucu bir sey istiyorum",
-                ExtractedTags = "[\"hafif\",\"doyurucu\"]",
-                RecommendedProducts = $"[\"{caesarSaladProductId}\",\"{mediterraneanBowlProductId}\",\"{classicBurgerProductId}\"]",
-                CreatedAtUtc = now.AddMinutes(-35)
-            },
-            new RecommendationLog
-            {
-                RecommendationLogId = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc2"),
-                RestaurantId = restaurantId,
-                Prompt = "tavuklu bir sey olsun",
-                ExtractedTags = "[\"tavuk\"]",
-                RecommendedProducts = $"[\"{chickenBurgerProductId}\",\"{caesarSaladProductId}\"]",
-                CreatedAtUtc = now.AddMinutes(-22)
-            },
-            new RecommendationLog
-            {
-                RecommendationLogId = Guid.Parse("cccccccc-cccc-cccc-cccc-ccccccccccc3"),
-                RestaurantId = restaurantId,
-                Prompt = "soguk bir icecek istiyorum",
-                ExtractedTags = "[\"soguk\",\"icecek\"]",
-                RecommendedProducts = $"[\"{lemonadeProductId}\",\"{colaProductId}\",\"{strawberrySodaProductId}\"]",
-                CreatedAtUtc = fiveMinutesAgo
-            }
-        };
-
         // Audit loglari, admin panelindeki log ekraninin dogrudan kullanima hazir gelmesini saglar.
         var auditLogs = new List<AuditLog>
         {
@@ -759,18 +727,6 @@ public static class AppDbSeeder
         if (orderStatusLogsToAdd.Count > 0)
         {
             await dbContext.OrderStatusLogs.AddRangeAsync(orderStatusLogsToAdd);
-        }
-
-        var existingRecommendationLogIds = await dbContext.RecommendationLogs
-            .AsNoTracking()
-            .Select(recommendationLog => recommendationLog.RecommendationLogId)
-            .ToHashSetAsync();
-        var recommendationLogsToAdd = recommendationLogs
-            .Where(recommendationLog => !existingRecommendationLogIds.Contains(recommendationLog.RecommendationLogId))
-            .ToList();
-        if (recommendationLogsToAdd.Count > 0)
-        {
-            await dbContext.RecommendationLogs.AddRangeAsync(recommendationLogsToAdd);
         }
 
         var existingAuditLogIds = await dbContext.AuditLogs
