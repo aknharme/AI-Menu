@@ -12,5 +12,6 @@ public class AdminProductDto
     public string Description { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public IReadOnlyCollection<string> Tags { get; set; } = Array.Empty<string>();
+    public IReadOnlyCollection<AdminProductVariantDto> Variants { get; set; } = Array.Empty<AdminProductVariantDto>();
     public bool IsActive { get; set; }
 }

@@ -49,7 +49,7 @@ Controller ince tutulur. Is kurallari service katmaninda, veri erisimi repositor
 - `MenuController`: menu, kategori, urun listesi, urun detayi
 - `OrdersController`: customer siparis olusturma
 - `AuthController`: login, register, me
-- `AdminController`: kategori, urun, masa CRUD
+- `AdminCategoriesController`, `AdminProductsController`, `AdminTablesController`: kategori, urun, masa CRUD
 - `AdminLogsController`: audit ve siparis loglari
 - `AdminStatsController`: dashboard ve istatistik endpointleri
 - `CashierOrdersController`: siparis listeleme, detay ve durum guncelleme

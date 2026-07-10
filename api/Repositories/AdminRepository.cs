@@ -58,6 +58,7 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
             .AsNoTracking()
             .Where(product => product.RestaurantId == restaurantId)
             .Include(product => product.Category)
+            .Include(product => product.Variants)
             .Include(product => product.ProductTags)
                 .ThenInclude(productTag => productTag.Tag)
             .OrderBy(product => product.Category.DisplayOrder)
@@ -69,6 +70,7 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
     {
         return await dbContext.Products
             .Include(product => product.Category)
+            .Include(product => product.Variants)
             .Include(product => product.ProductTags)
                 .ThenInclude(productTag => productTag.Tag)
             .FirstOrDefaultAsync(product => product.ProductId == productId, cancellationToken);
@@ -98,9 +100,37 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
         return Task.CompletedTask;
     }
 
+    public async Task<int> DeleteUnusedTagsAsync(
+        Guid restaurantId,
+        IReadOnlyCollection<Guid> tagIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (tagIds.Count == 0)
+        {
+            return 0;
+        }
+
+        var unusedTags = await dbContext.Tags
+            .Where(tag =>
+                tag.RestaurantId == restaurantId &&
+                tagIds.Contains(tag.TagId) &&
+                !dbContext.ProductTags.Any(productTag => productTag.TagId == tag.TagId))
+            .ToListAsync(cancellationToken);
+
+        dbContext.Tags.RemoveRange(unusedTags);
+        return unusedTags.Count;
+    }
+
     public async Task<bool> HasOrdersForProductAsync(Guid productId, CancellationToken cancellationToken = default)
     {
         return await dbContext.OrderItems.AnyAsync(orderItem => orderItem.ProductId == productId, cancellationToken);
+    }
+
+    public async Task<bool> HasOrdersForProductVariantAsync(Guid productVariantId, CancellationToken cancellationToken = default)
+    {
+        return await dbContext.OrderItems.AnyAsync(
+            orderItem => orderItem.ProductVariantId == productVariantId,
+            cancellationToken);
     }
 
     public async Task<IReadOnlyCollection<Table>> GetTablesAsync(Guid restaurantId, CancellationToken cancellationToken = default)

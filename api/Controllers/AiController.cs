@@ -12,7 +12,7 @@ public class AiController(IAiService aiService) : ControllerBase
 {
     /// <summary>
     /// Müşterinin web arayüzünden gönderdiği mesaja karşılık, 
-    /// veritabanı ürün listesini de katarak local AI modelinden (Ollama) cevap döner.
+    /// veritabanı ürün listesini de katarak AiWaiterApi üzerinden cevap döner.
     /// </summary>
     [HttpPost("{restaurantId:guid}/chat")]
     [ProducesResponseType(typeof(AiChatResponseDto), StatusCodes.Status200OK)]

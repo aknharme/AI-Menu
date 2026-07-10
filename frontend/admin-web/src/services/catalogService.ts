@@ -7,12 +7,12 @@ import type {
 } from '../types/catalog';
 
 export async function getCategories(restaurantId: string) {
-  const response = await api.get<AdminCategory[]>(`/admin/categories/${restaurantId}`);
+  const response = await api.get<AdminCategory[]>(`/admin/catalog/categories/${restaurantId}`);
   return response.data;
 }
 
 export async function createCategory(payload: CategoryFormValues) {
-  const response = await api.post<AdminCategory>('/admin/categories', {
+  const response = await api.post<AdminCategory>('/admin/catalog/categories', {
     restaurantId: payload.restaurantId,
     name: payload.name,
     displayOrder: Number(payload.displayOrder),
@@ -23,7 +23,7 @@ export async function createCategory(payload: CategoryFormValues) {
 }
 
 export async function updateCategory(categoryId: string, payload: CategoryFormValues) {
-  const response = await api.put<AdminCategory>(`/admin/categories/${categoryId}`, {
+  const response = await api.put<AdminCategory>(`/admin/catalog/categories/${categoryId}`, {
     restaurantId: payload.restaurantId,
     name: payload.name,
     displayOrder: Number(payload.displayOrder),
@@ -34,16 +34,16 @@ export async function updateCategory(categoryId: string, payload: CategoryFormVa
 }
 
 export async function deleteCategory(categoryId: string) {
-  await api.delete(`/admin/categories/${categoryId}`);
+  await api.delete(`/admin/catalog/categories/${categoryId}`);
 }
 
 export async function getProducts(restaurantId: string) {
-  const response = await api.get<AdminProduct[]>(`/admin/products/${restaurantId}`);
+  const response = await api.get<AdminProduct[]>(`/admin/catalog/products/${restaurantId}`);
   return response.data;
 }
 
 export async function createProduct(payload: ProductFormValues) {
-  const response = await api.post<AdminProduct>('/admin/products', {
+  const response = await api.post<AdminProduct>('/admin/catalog/products', {
     restaurantId: payload.restaurantId,
     name: payload.name,
     price: Number(payload.price),
@@ -57,7 +57,7 @@ export async function createProduct(payload: ProductFormValues) {
 }
 
 export async function updateProduct(productId: string, payload: ProductFormValues) {
-  const response = await api.put<AdminProduct>(`/admin/products/${productId}`, {
+  const response = await api.put<AdminProduct>(`/admin/catalog/products/${productId}`, {
     restaurantId: payload.restaurantId,
     name: payload.name,
     price: Number(payload.price),
@@ -71,5 +71,5 @@ export async function updateProduct(productId: string, payload: ProductFormValue
 }
 
 export async function deleteProduct(productId: string) {
-  await api.delete(`/admin/products/${productId}`);
+  await api.delete(`/admin/catalog/products/${productId}`);
 }

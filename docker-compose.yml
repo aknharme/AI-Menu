@@ -33,6 +33,9 @@
       Jwt__Audience: ${JWT_AUDIENCE:-AiMenu.Apps}
       Jwt__SecretKey: ${JWT_SECRET:-AiMenu_Local_Development_Secret_Key_2026_Change_Me_123456}
       Jwt__ExpirationMinutes: ${JWT_EXPIRATION_MINUTES:-180}
+      AiWaiterApi__BaseUrl: ${AI_WAITER_API_BASE_URL:-http://host.docker.internal:7001}
+      AiWaiterApi__ChatPath: ${AI_WAITER_API_CHAT_PATH:-/api/waiter/chat}
+      AiWaiterApi__TimeoutSeconds: ${AI_WAITER_API_TIMEOUT_SECONDS:-10}
     expose:
       - "8080"
   customer-web:
