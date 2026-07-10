@@ -20,22 +20,29 @@ import { extractApiErrorMessage } from '../utils/apiError';
 type ProductFormState = {
   name: string;
   price: string;
-  mainCategoryId: string;
   categoryId: string;
   description: string;
   content: string;
   tags: string;
+  variants: ProductVariantFormState[];
+  isActive: boolean;
+};
+
+type ProductVariantFormState = {
+  productVariantId?: string;
+  name: string;
+  priceDelta: string;
   isActive: boolean;
 };
 
 const initialFormState: ProductFormState = {
   name: '',
   price: '',
-  mainCategoryId: '',
   categoryId: '',
   description: '',
   content: '',
   tags: '',
+  variants: [],
   isActive: true,
 };
 
@@ -49,7 +56,7 @@ function sortCategories(categories: AdminCategory[]) {
   });
 }
 
-// ProductsPage, ürünleri alt menü kategorisine bağlayarak admin CRUD akışını sunar.
+// ProductsPage, ürünleri doğrudan kategoriye bağlayarak admin CRUD akışını sunar.
 export default function ProductsPage() {
   const { restaurantId } = useRestaurantContext();
   const [categories, setCategories] = useState<AdminCategory[]>([]);
@@ -60,18 +67,7 @@ export default function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const mainCategories = useMemo(
-    () => sortCategories(categories.filter((category) => !category.parentCategoryId)),
-    [categories],
-  );
-
-  const subCategoriesForSelectedMain = useMemo(
-    () =>
-      sortCategories(
-        categories.filter((category) => category.parentCategoryId === form.mainCategoryId),
-      ),
-    [categories, form.mainCategoryId],
-  );
+  const sortedCategories = useMemo(() => sortCategories(categories), [categories]);
 
   useEffect(() => {
     void loadData();
@@ -85,18 +81,13 @@ export default function ProductsPage() {
         getCategories(restaurantId),
         getProducts(restaurantId),
       ]);
-      const sortedMainCategories = sortCategories(categoriesResponse.filter((category) => !category.parentCategoryId));
-      const firstMainCategoryId = sortedMainCategories[0]?.categoryId ?? '';
-      const firstSubCategoryId =
-        sortCategories(categoriesResponse.filter((category) => category.parentCategoryId === firstMainCategoryId))[0]
-          ?.categoryId ?? '';
+      const firstCategoryId = sortCategories(categoriesResponse)[0]?.categoryId ?? '';
 
       setCategories(categoriesResponse);
       setProducts(productsResponse);
       setForm((current) => ({
         ...current,
-        mainCategoryId: current.mainCategoryId || firstMainCategoryId,
-        categoryId: current.categoryId || firstSubCategoryId,
+        categoryId: current.categoryId || firstCategoryId,
       }));
     } catch {
       setError('Ürün veya kategori verileri yüklenemedi.');
@@ -105,19 +96,13 @@ export default function ProductsPage() {
     }
   }
 
-  function getSubCategories(mainCategoryId: string) {
-    return sortCategories(categories.filter((category) => category.parentCategoryId === mainCategoryId));
-  }
-
   function resetForm() {
-    const firstMainCategoryId = mainCategories[0]?.categoryId ?? '';
-    const firstSubCategoryId = getSubCategories(firstMainCategoryId)[0]?.categoryId ?? '';
+    const firstCategoryId = sortedCategories[0]?.categoryId ?? '';
 
     setEditingProductId(null);
     setForm({
       ...initialFormState,
-      mainCategoryId: firstMainCategoryId,
-      categoryId: firstSubCategoryId,
+      categoryId: firstCategoryId,
     });
   }
 
@@ -126,12 +111,8 @@ export default function ProductsPage() {
       return 'Ürün adı boş olamaz.';
     }
 
-    if (!form.mainCategoryId) {
-      return 'Ana kategori seçimi zorunludur.';
-    }
-
     if (!form.categoryId) {
-      return 'Alt menü seçimi zorunludur.';
+      return 'Kategori seçimi zorunludur.';
     }
 
     if (!form.price.trim() || Number.isNaN(Number(form.price))) {
@@ -140,6 +121,16 @@ export default function ProductsPage() {
 
     if (Number(form.price) < 0) {
       return 'Fiyat negatif olamaz.';
+    }
+
+    const filledVariants = form.variants.filter((variant) => variant.name.trim());
+    const invalidVariant = filledVariants.find((variant) => {
+      const priceDelta = Number(variant.priceDelta || '0');
+      return Number.isNaN(priceDelta) || Number(form.price) + priceDelta < 0;
+    });
+
+    if (invalidVariant) {
+      return 'Varyant fiyat farkı sayısal olmalı ve toplam fiyat negatif olmamalıdır.';
     }
 
     return null;
@@ -165,6 +156,14 @@ export default function ProductsPage() {
         .split(',')
         .map((tag) => tag.trim())
         .filter(Boolean),
+      variants: form.variants
+        .filter((variant) => variant.name.trim())
+        .map((variant) => ({
+          productVariantId: variant.productVariantId,
+          name: variant.name.trim(),
+          priceDelta: Number(variant.priceDelta || '0'),
+          isActive: variant.isActive,
+        })),
       isActive: form.isActive,
     };
 
@@ -200,37 +199,50 @@ export default function ProductsPage() {
     }
   }
 
-  function handleMainCategoryChange(mainCategoryId: string) {
-    const firstSubCategoryId = getSubCategories(mainCategoryId)[0]?.categoryId ?? '';
-    setForm((current) => ({
-      ...current,
-      mainCategoryId,
-      categoryId: firstSubCategoryId,
-    }));
-  }
-
   function handleEdit(product: AdminProduct) {
-    const category = categories.find((currentCategory) => currentCategory.categoryId === product.categoryId);
-    const mainCategoryId = product.parentCategoryId ?? category?.categoryId ?? '';
-    const hasSubCategory = Boolean(product.parentCategoryId);
-
     setEditingProductId(product.productId);
     setForm({
       name: product.name,
       price: String(product.price),
-      mainCategoryId,
-      categoryId: hasSubCategory ? product.categoryId : '',
+      categoryId: product.categoryId,
       description: product.description,
       content: product.content,
       tags: product.tags.join(', '),
+      variants: product.variants.map((variant) => ({
+        productVariantId: variant.productVariantId,
+        name: variant.name,
+        priceDelta: String(variant.priceDelta),
+        isActive: variant.isActive,
+      })),
       isActive: product.isActive,
     });
   }
 
   function formatCategoryPath(product: AdminProduct) {
-    return product.parentCategoryName
-      ? `${product.parentCategoryName} / ${product.categoryName}`
-      : product.categoryName;
+    return product.categoryName;
+  }
+
+  function addVariant() {
+    setForm((current) => ({
+      ...current,
+      variants: [...current.variants, { name: '', priceDelta: '0', isActive: true }],
+    }));
+  }
+
+  function updateVariant(index: number, values: Partial<ProductVariantFormState>) {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.map((variant, currentIndex) =>
+        currentIndex === index ? { ...variant, ...values } : variant,
+      ),
+    }));
+  }
+
+  function removeVariant(index: number) {
+    setForm((current) => ({
+      ...current,
+      variants: current.variants.filter((_, currentIndex) => currentIndex !== index),
+    }));
   }
 
   return (
@@ -265,31 +277,14 @@ export default function ProductsPage() {
           </label>
 
           <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700">Ana kategori</span>
-            <select
-              value={form.mainCategoryId}
-              onChange={(event) => handleMainCategoryChange(event.target.value)}
-              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
-            >
-              <option value="">Ana kategori seçin</option>
-              {mainCategories.map((category) => (
-                <option key={category.categoryId} value={category.categoryId}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-stone-700">Alt menü</span>
+            <span className="text-sm font-medium text-stone-700">Kategori</span>
             <select
               value={form.categoryId}
               onChange={(event) => setForm((current) => ({ ...current, categoryId: event.target.value }))}
-              disabled={!form.mainCategoryId || subCategoriesForSelectedMain.length === 0}
-              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100 disabled:cursor-not-allowed disabled:bg-stone-100"
+              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
             >
-              <option value="">Alt menü seçin</option>
-              {subCategoriesForSelectedMain.map((category) => (
+              <option value="">Kategori seçin</option>
+              {sortedCategories.map((category) => (
                 <option key={category.categoryId} value={category.categoryId}>
                   {category.name}{category.isActive ? '' : ' (Pasif)'}
                 </option>
@@ -329,6 +324,60 @@ export default function ProductsPage() {
               Virgül ile ayırın. Bu etiketler ürünleri gruplamak ve aramada bulmak için kullanılır.
             </p>
           </label>
+
+          <div className="space-y-3 rounded-2xl border border-stone-200 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-medium text-stone-700">Varyantlar</span>
+              <button
+                type="button"
+                onClick={addVariant}
+                className="rounded-full border border-stone-300 px-3 py-1.5 text-xs font-semibold text-stone-700"
+              >
+                Varyant ekle
+              </button>
+            </div>
+
+            {form.variants.length === 0 ? (
+              <p className="text-xs leading-5 text-stone-500">Varyant opsiyoneldir. Ürün tek fiyatlıysa boş bırakın.</p>
+            ) : (
+              <div className="space-y-3">
+                {form.variants.map((variant, index) => (
+                  <div key={variant.productVariantId ?? index} className="space-y-2 rounded-2xl bg-stone-50 p-3">
+                    <input
+                      value={variant.name}
+                      onChange={(event) => updateVariant(index, { name: event.target.value })}
+                      placeholder="Varyant adı"
+                      className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                    />
+                    <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+                      <input
+                        value={variant.priceDelta}
+                        onChange={(event) => updateVariant(index, { priceDelta: event.target.value })}
+                        placeholder="Fiyat farkı"
+                        className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+                      />
+                      <label className="flex items-center justify-between gap-3 rounded-2xl border border-stone-200 bg-white px-4 py-3 text-sm font-medium text-stone-700">
+                        Aktif
+                        <input
+                          type="checkbox"
+                          checked={variant.isActive}
+                          onChange={(event) => updateVariant(index, { isActive: event.target.checked })}
+                          className="h-4 w-4 accent-amber-600"
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeVariant(index)}
+                      className="rounded-full border border-rose-300 px-3 py-1.5 text-xs font-semibold text-rose-700"
+                    >
+                      Kaldır
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <label className="flex items-center justify-between rounded-2xl border border-stone-200 px-4 py-3">
             <span className="text-sm font-medium text-stone-700">Aktif / Pasif</span>
@@ -396,6 +445,11 @@ export default function ProductsPage() {
                     {product.tags.length > 0 ? (
                       <p className="text-xs font-medium text-amber-700">
                         Etiketler: {product.tags.join(', ')}
+                      </p>
+                    ) : null}
+                    {product.variants.length > 0 ? (
+                      <p className="text-xs font-medium text-stone-500">
+                        Varyantlar: {product.variants.map((variant) => `${variant.name} (${variant.priceDelta >= 0 ? '+' : ''}${variant.priceDelta} TL${variant.isActive ? '' : ', pasif'})`).join(', ')}
                       </p>
                     ) : null}
                   </div>

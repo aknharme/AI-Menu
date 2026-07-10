@@ -16,60 +16,60 @@ import type {
 
 // Admin API service layer, tum kategori, urun ve masa CRUD isteklerini merkezden yonetir.
 export async function getCategories(restaurantId: string) {
-  const response = await api.get<AdminCategory[]>(`/admin/categories/${restaurantId}`);
+  const response = await api.get<AdminCategory[]>(`/admin/catalog/categories/${restaurantId}`);
   return response.data;
 }
 
 export async function createCategory(request: SaveAdminCategoryRequest) {
-  const response = await api.post<AdminCategory>('/admin/categories', request);
+  const response = await api.post<AdminCategory>('/admin/catalog/categories', request);
   return response.data;
 }
 
 export async function updateCategory(categoryId: string, request: SaveAdminCategoryRequest) {
-  const response = await api.put<AdminCategory>(`/admin/categories/${categoryId}`, request);
+  const response = await api.put<AdminCategory>(`/admin/catalog/categories/${categoryId}`, request);
   return response.data;
 }
 
 export async function deleteCategory(categoryId: string) {
-  await api.delete(`/admin/categories/${categoryId}`);
+  await api.delete(`/admin/catalog/categories/${categoryId}`);
 }
 
 export async function getProducts(restaurantId: string) {
-  const response = await api.get<AdminProduct[]>(`/admin/products/${restaurantId}`);
+  const response = await api.get<AdminProduct[]>(`/admin/catalog/products/${restaurantId}`);
   return response.data;
 }
 
 export async function createProduct(request: SaveAdminProductRequest) {
-  const response = await api.post<AdminProduct>('/admin/products', request);
+  const response = await api.post<AdminProduct>('/admin/catalog/products', request);
   return response.data;
 }
 
 export async function updateProduct(productId: string, request: SaveAdminProductRequest) {
-  const response = await api.put<AdminProduct>(`/admin/products/${productId}`, request);
+  const response = await api.put<AdminProduct>(`/admin/catalog/products/${productId}`, request);
   return response.data;
 }
 
 export async function deleteProduct(productId: string) {
-  await api.delete(`/admin/products/${productId}`);
+  await api.delete(`/admin/catalog/products/${productId}`);
 }
 
 export async function getTables(restaurantId: string) {
-  const response = await api.get<AdminTable[]>(`/admin/tables/${restaurantId}`);
+  const response = await api.get<AdminTable[]>(`/admin/catalog/tables/${restaurantId}`);
   return response.data;
 }
 
 export async function createTable(request: SaveAdminTableRequest) {
-  const response = await api.post<AdminTable>('/admin/tables', request);
+  const response = await api.post<AdminTable>('/admin/catalog/tables', request);
   return response.data;
 }
 
 export async function updateTable(tableId: string, request: SaveAdminTableRequest) {
-  const response = await api.put<AdminTable>(`/admin/tables/${tableId}`, request);
+  const response = await api.put<AdminTable>(`/admin/catalog/tables/${tableId}`, request);
   return response.data;
 }
 
 export async function deleteTable(tableId: string) {
-  await api.delete(`/admin/tables/${tableId}`);
+  await api.delete(`/admin/catalog/tables/${tableId}`);
 }
 
 export async function getDashboard(restaurantId: string, date?: string) {

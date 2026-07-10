@@ -140,18 +140,21 @@ var host = new WebHostBuilder()
         {
             if (string.IsNullOrWhiteSpace(connectionString))
             {
+                Console.WriteLine("Database provider: InMemory");
                 options.UseInMemoryDatabase("AiMenuDb");
                 return;
             }
 
+            Console.WriteLine("Database provider: PostgreSQL");
             options.UseNpgsql(connectionString);
         });
 
         // JWT ayarlari login ve panel erisimleri icin tek noktadan okunur.
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
-        // Ollama ayarlari yerel yapay zeka servisi icin okunur.
+        // Ollama ayarlari eski lokal model entegrasyonu icin tutulur.
         services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
+        services.Configure<AiWaiterApiOptions>(configuration.GetSection("AiWaiterApi"));
 
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
         if (!isDevelopment && jwtOptions.SecretKey.Contains("Local_Development", StringComparison.OrdinalIgnoreCase))
@@ -186,21 +189,25 @@ var host = new WebHostBuilder()
         services.AddScoped<IRestaurantRepository, RestaurantRepository>();
         services.AddScoped<IAuthRepository, AuthRepository>();
         services.AddScoped<IAdminRepository, AdminRepository>();
-        services.AddScoped<IAdminCatalogRepository, AdminCatalogRepository>();
         services.AddScoped<ILogRepository, LogRepository>();
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IJwtTokenService, JwtTokenService>();
         services.AddScoped<ILogService, LogService>();
         services.AddScoped<IAdminService, AdminService>();
-        services.AddScoped<IAdminCatalogService, AdminCatalogService>();
         services.AddScoped<IAdminStatsService, AdminStatsService>();
         services.AddScoped<IMenuService, MenuService>();
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICashierService, CashierService>();
-        
-        // HttpClient ile entegre yapay zeka servisi
-        services.AddHttpClient<IAiService, AiService>();
+        services.AddScoped<IAiService, AiService>();
+
+        // AI Menu Backend dogrudan Ollama'ya gitmez; AiWaiterApi uzerinden modele ulasir.
+        services.AddHttpClient<IAiWaiterClient, AiWaiterClient>(client =>
+        {
+            var aiWaiterOptions = configuration.GetSection("AiWaiterApi").Get<AiWaiterApiOptions>() ?? new AiWaiterApiOptions();
+            client.BaseAddress = new Uri(aiWaiterOptions.BaseUrl.TrimEnd('/') + "/");
+            client.Timeout = TimeSpan.FromSeconds(Math.Max(1, aiWaiterOptions.TimeoutSeconds));
+        });
     })
     .Configure(app =>
     {

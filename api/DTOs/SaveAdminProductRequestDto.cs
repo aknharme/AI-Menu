@@ -27,5 +27,8 @@ public class SaveAdminProductRequestDto
 
     public IReadOnlyCollection<string> Tags { get; set; } = Array.Empty<string>();
 
+    public IReadOnlyCollection<SaveAdminProductVariantRequestDto> Variants { get; set; } =
+        Array.Empty<SaveAdminProductVariantRequestDto>();
+
     public bool IsActive { get; set; } = true;
 }

@@ -19,7 +19,9 @@ public interface IAdminRepository
     Task<Tag?> GetTagByNormalizedNameAsync(Guid restaurantId, string normalizedName, CancellationToken cancellationToken = default);
     Task<Tag> AddTagAsync(Tag tag, CancellationToken cancellationToken = default);
     Task DeleteProductAsync(Product product, CancellationToken cancellationToken = default);
+    Task<int> DeleteUnusedTagsAsync(Guid restaurantId, IReadOnlyCollection<Guid> tagIds, CancellationToken cancellationToken = default);
     Task<bool> HasOrdersForProductAsync(Guid productId, CancellationToken cancellationToken = default);
+    Task<bool> HasOrdersForProductVariantAsync(Guid productVariantId, CancellationToken cancellationToken = default);
 
     Task<IReadOnlyCollection<Table>> GetTablesAsync(Guid restaurantId, CancellationToken cancellationToken = default);
     Task<Table?> GetTableAsync(Guid tableId, CancellationToken cancellationToken = default);

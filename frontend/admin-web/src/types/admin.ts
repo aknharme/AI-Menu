@@ -33,6 +33,14 @@ export type AdminProduct = {
   description: string;
   content: string;
   tags: string[];
+  variants: AdminProductVariant[];
+  isActive: boolean;
+};
+
+export type AdminProductVariant = {
+  productVariantId: string;
+  name: string;
+  priceDelta: number;
   isActive: boolean;
 };
 
@@ -45,6 +53,14 @@ export type SaveAdminProductRequest = {
   description: string;
   content: string;
   tags: string[];
+  variants: SaveAdminProductVariantRequest[];
+  isActive: boolean;
+};
+
+export type SaveAdminProductVariantRequest = {
+  productVariantId?: string;
+  name: string;
+  priceDelta: number;
   isActive: boolean;
 };
 
