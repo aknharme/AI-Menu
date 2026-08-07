@@ -153,11 +153,14 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
             Price = request.Price,
             Description = request.Description.Trim(),
             Ingredients = request.Content.Trim(),
+            Calories = request.Calories,
+            PreparationTimeMinutes = request.PreparationTimeMinutes,
             IsActive = request.IsActive
         };
 
         await adminRepository.AddProductAsync(product, cancellationToken);
         await SyncProductTagsAsync(product, request.Tags, cancellationToken);
+        SyncProductAllergens(product, request.Allergens);
         await SyncProductVariantsAsync(product, request.Variants, cancellationToken);
         await adminRepository.SaveChangesAsync(cancellationToken);
         await logService.LogAuditAsync(
@@ -197,8 +200,11 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
         product.Price = request.Price;
         product.Description = request.Description.Trim();
         product.Ingredients = request.Content.Trim();
+        product.Calories = request.Calories;
+        product.PreparationTimeMinutes = request.PreparationTimeMinutes;
         product.IsActive = request.IsActive;
         await SyncProductTagsAsync(product, request.Tags, cancellationToken);
+        SyncProductAllergens(product, request.Allergens);
         await SyncProductVariantsAsync(product, request.Variants, cancellationToken);
 
         await adminRepository.SaveChangesAsync(cancellationToken);
@@ -411,6 +417,12 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
             Price = product.Price,
             Description = product.Description,
             Content = product.Ingredients,
+            Calories = product.Calories,
+            PreparationTimeMinutes = product.PreparationTimeMinutes,
+            Allergens = product.Allergens
+                .OrderBy(allergen => allergen.Name)
+                .Select(allergen => allergen.Name)
+                .ToList(),
             Tags = product.ProductTags
                 .OrderBy(productTag => productTag.Tag.Name)
                 .Select(productTag => productTag.Tag.Name)
@@ -427,6 +439,41 @@ public class AdminService(IAdminRepository adminRepository, ILogService logServi
                 .ToList(),
             IsActive = product.IsActive
         };
+    }
+
+    private static void SyncProductAllergens(Product product, IReadOnlyCollection<string> rawAllergens)
+    {
+        var allergens = rawAllergens
+            .Select(allergen => allergen.Trim().ToLowerInvariant())
+            .Where(allergen => !string.IsNullOrWhiteSpace(allergen))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(20)
+            .ToList();
+        var requested = allergens.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var existing in product.Allergens.ToList())
+        {
+            if (!requested.Contains(existing.Name))
+            {
+                product.Allergens.Remove(existing);
+            }
+        }
+
+        foreach (var allergenName in allergens)
+        {
+            if (product.Allergens.Any(existing =>
+                    string.Equals(existing.Name, allergenName, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
+            product.Allergens.Add(new ProductAllergen
+            {
+                RestaurantId = product.RestaurantId,
+                ProductId = product.ProductId,
+                Name = allergenName
+            });
+        }
     }
 
     private async Task SyncProductTagsAsync(

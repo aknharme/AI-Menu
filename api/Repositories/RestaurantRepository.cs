@@ -42,6 +42,7 @@ public class RestaurantRepository(AppDbContext dbContext) : IRestaurantRepositor
             .Include(x => x.Category)
             .Include(x => x.ProductTags)
                 .ThenInclude(productTag => productTag.Tag)
+            .Include(x => x.Allergens)
             .Include(x => x.Variants.Where(variant => variant.IsActive))
             .OrderBy(x => x.Category.DisplayOrder)
             .ThenBy(x => x.Name)

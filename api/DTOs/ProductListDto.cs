@@ -9,5 +9,7 @@ public class ProductListDto
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public decimal Price { get; set; }
+    public int? Calories { get; set; }
+    public int? PreparationTimeMinutes { get; set; }
     public IReadOnlyCollection<string> Tags { get; set; } = Array.Empty<string>();
 }

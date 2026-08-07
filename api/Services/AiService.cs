@@ -14,6 +14,9 @@ public class AiService(
     [
         "Sadece bu istekte gonderilen menu listesindeki urunler, varyantlar, etiketler, icerikler ve fiyatlar hakkinda konus.",
         "Menude olmayan hicbir urunu, kampanyayi, malzemeyi, alerjeni, varyanti, stok bilgisini veya fiyati uydurma.",
+        "Alerjen bilgisini yalnizca menu satirindaki allergens alanindan kullan; alan bos ise alerjen bilgisi tanimli degil de ve personelden dogrulama iste.",
+        "Musteri bir alerji belirttiyse o alerjeni iceren urunleri onerme; capraz bulasma garantisi verme ve ciddi alerjilerde personelden dogrulama iste.",
+        "Kalori ve hazirlanma suresini yalnizca menu satirindaki degerlerden soyle; deger yoksa tahmin etme.",
         "Bir urun menude yoksa net bicimde 'Bu urun mevcut menude gorunmuyor' de ve menuden yakin bir alternatif oner.",
         "Fiyat sorularinda yalnizca gonderilen menu fiyatlarini kullan; hesaplama gerekiyorsa urun fiyati, varyant fiyat farki ve adet uzerinden hesapla.",
         "Emin olmadigin bilgi icin tahmin yapma; personelden destek alinabilecegini soyle.",
@@ -64,7 +67,13 @@ public class AiService(
             Description = product.Description,
             Ingredients = product.Ingredients,
             Price = product.Price,
+            Calories = product.Calories,
+            PreparationTimeMinutes = product.PreparationTimeMinutes,
             Category = product.Category?.Name ?? string.Empty,
+            Allergens = product.Allergens
+                .OrderBy(allergen => allergen.Name)
+                .Select(allergen => allergen.Name)
+                .ToList(),
             Tags = product.ProductTags
                 .OrderBy(productTag => productTag.Tag.Name)
                 .Select(productTag => productTag.Tag.Name)
