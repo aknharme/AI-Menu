@@ -23,6 +23,9 @@ type ProductFormState = {
   categoryId: string;
   description: string;
   content: string;
+  calories: string;
+  preparationTimeMinutes: string;
+  allergens: string;
   tags: string;
   variants: ProductVariantFormState[];
   isActive: boolean;
@@ -41,6 +44,9 @@ const initialFormState: ProductFormState = {
   categoryId: '',
   description: '',
   content: '',
+  calories: '',
+  preparationTimeMinutes: '',
+  allergens: '',
   tags: '',
   variants: [],
   isActive: true,
@@ -123,6 +129,14 @@ export default function ProductsPage() {
       return 'Fiyat negatif olamaz.';
     }
 
+    if (form.calories && (!Number.isInteger(Number(form.calories)) || Number(form.calories) < 0 || Number(form.calories) > 5000)) {
+      return 'Kalori 0 ile 5000 arasında tam sayı olmalıdır.';
+    }
+
+    if (form.preparationTimeMinutes && (!Number.isInteger(Number(form.preparationTimeMinutes)) || Number(form.preparationTimeMinutes) < 1 || Number(form.preparationTimeMinutes) > 480)) {
+      return 'Hazırlanma süresi 1 ile 480 dakika arasında tam sayı olmalıdır.';
+    }
+
     const filledVariants = form.variants.filter((variant) => variant.name.trim());
     const invalidVariant = filledVariants.find((variant) => {
       const priceDelta = Number(variant.priceDelta || '0');
@@ -152,6 +166,12 @@ export default function ProductsPage() {
       price: Number(form.price),
       description: form.description.trim(),
       content: form.content.trim(),
+      calories: form.calories ? Number(form.calories) : null,
+      preparationTimeMinutes: form.preparationTimeMinutes ? Number(form.preparationTimeMinutes) : null,
+      allergens: form.allergens
+        .split(',')
+        .map((allergen) => allergen.trim())
+        .filter(Boolean),
       tags: form.tags
         .split(',')
         .map((tag) => tag.trim())
@@ -207,6 +227,9 @@ export default function ProductsPage() {
       categoryId: product.categoryId,
       description: product.description,
       content: product.content,
+      calories: product.calories === null ? '' : String(product.calories),
+      preparationTimeMinutes: product.preparationTimeMinutes === null ? '' : String(product.preparationTimeMinutes),
+      allergens: product.allergens.join(', '),
       tags: product.tags.join(', '),
       variants: product.variants.map((variant) => ({
         productVariantId: variant.productVariantId,
@@ -310,6 +333,47 @@ export default function ProductsPage() {
               rows={3}
               className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
             />
+          </label>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-stone-700">Kalori (kcal)</span>
+              <input
+                type="number"
+                min="0"
+                max="5000"
+                step="1"
+                value={form.calories}
+                onChange={(event) => setForm((current) => ({ ...current, calories: event.target.value }))}
+                placeholder="Bilinmiyorsa boş"
+                className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              />
+            </label>
+
+            <label className="block space-y-2">
+              <span className="text-sm font-medium text-stone-700">Hazırlanma (dk)</span>
+              <input
+                type="number"
+                min="1"
+                max="480"
+                step="1"
+                value={form.preparationTimeMinutes}
+                onChange={(event) => setForm((current) => ({ ...current, preparationTimeMinutes: event.target.value }))}
+                placeholder="Bilinmiyorsa boş"
+                className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+              />
+            </label>
+          </div>
+
+          <label className="block space-y-2">
+            <span className="text-sm font-medium text-stone-700">Alerjenler</span>
+            <input
+              value={form.allergens}
+              onChange={(event) => setForm((current) => ({ ...current, allergens: event.target.value }))}
+              placeholder="gluten, süt, fıstık"
+              className="w-full rounded-2xl border border-stone-200 px-4 py-3 text-sm outline-none transition focus:border-amber-400 focus:ring-4 focus:ring-amber-100"
+            />
+            <p className="text-xs leading-5 text-stone-500">Alerjenleri virgül ile ayırın.</p>
           </label>
 
           <label className="block space-y-2">
@@ -442,6 +506,16 @@ export default function ProductsPage() {
                     <h3 className="text-base font-semibold text-stone-950">{product.name}</h3>
                     <p className="text-sm leading-6 text-stone-600">{product.description || 'Açıklama yok'}</p>
                     <p className="text-sm font-medium text-stone-500">{product.content || 'İçerik yok'}</p>
+                    {(product.calories !== null || product.preparationTimeMinutes !== null) ? (
+                      <p className="text-xs font-medium text-stone-500">
+                        {product.calories !== null ? `${product.calories} kcal` : 'Kalori belirtilmemiş'}
+                        {' · '}
+                        {product.preparationTimeMinutes !== null ? `${product.preparationTimeMinutes} dk` : 'Süre belirtilmemiş'}
+                      </p>
+                    ) : null}
+                    {product.allergens.length > 0 ? (
+                      <p className="text-xs font-medium text-rose-700">Alerjenler: {product.allergens.join(', ')}</p>
+                    ) : null}
                     {product.tags.length > 0 ? (
                       <p className="text-xs font-medium text-amber-700">
                         Etiketler: {product.tags.join(', ')}

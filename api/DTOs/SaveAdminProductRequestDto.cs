@@ -25,6 +25,14 @@ public class SaveAdminProductRequestDto
     [MaxLength(500, ErrorMessage = "Content cannot exceed 500 characters.")]
     public string Content { get; set; } = string.Empty;
 
+    [Range(0, 5000, ErrorMessage = "Calories must be between 0 and 5000.")]
+    public int? Calories { get; set; }
+
+    [Range(1, 480, ErrorMessage = "Preparation time must be between 1 and 480 minutes.")]
+    public int? PreparationTimeMinutes { get; set; }
+
+    public IReadOnlyCollection<string> Allergens { get; set; } = Array.Empty<string>();
+
     public IReadOnlyCollection<string> Tags { get; set; } = Array.Empty<string>();
 
     public IReadOnlyCollection<SaveAdminProductVariantRequestDto> Variants { get; set; } =

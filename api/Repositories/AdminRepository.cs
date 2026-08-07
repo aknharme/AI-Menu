@@ -59,6 +59,7 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
             .Where(product => product.RestaurantId == restaurantId)
             .Include(product => product.Category)
             .Include(product => product.Variants)
+            .Include(product => product.Allergens)
             .Include(product => product.ProductTags)
                 .ThenInclude(productTag => productTag.Tag)
             .OrderBy(product => product.Category.DisplayOrder)
@@ -71,6 +72,7 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
         return await dbContext.Products
             .Include(product => product.Category)
             .Include(product => product.Variants)
+            .Include(product => product.Allergens)
             .Include(product => product.ProductTags)
                 .ThenInclude(productTag => productTag.Tag)
             .FirstOrDefaultAsync(product => product.ProductId == productId, cancellationToken);

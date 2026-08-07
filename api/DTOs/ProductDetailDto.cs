@@ -11,6 +11,8 @@ public class ProductDetailDto
     public string Description { get; set; } = string.Empty;
     public string Ingredients { get; set; } = string.Empty;
     public decimal Price { get; set; }
+    public int? Calories { get; set; }
+    public int? PreparationTimeMinutes { get; set; }
     public IReadOnlyCollection<string> Allergens { get; set; } = Array.Empty<string>();
     public IReadOnlyCollection<string> Tags { get; set; } = Array.Empty<string>();
     public IReadOnlyCollection<ProductVariantDto> Variants { get; set; } = Array.Empty<ProductVariantDto>();

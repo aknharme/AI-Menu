@@ -80,6 +80,8 @@ public class MenuService(IRestaurantRepository restaurantRepository) : IMenuServ
             Description = product.Description,
             Ingredients = product.Ingredients,
             Price = product.Price,
+            Calories = product.Calories,
+            PreparationTimeMinutes = product.PreparationTimeMinutes,
             Allergens = product.Allergens
                 .OrderBy(x => x.Name)
                 .Select(x => x.Name)
@@ -122,6 +124,8 @@ public class MenuService(IRestaurantRepository restaurantRepository) : IMenuServ
                         Name = product.Name,
                         Description = product.Description,
                         Price = product.Price,
+                        Calories = product.Calories,
+                        PreparationTimeMinutes = product.PreparationTimeMinutes,
                         Tags = product.ProductTags
                             .OrderBy(x => x.Tag.Name)
                             .Select(x => x.Tag.Name)
@@ -143,6 +147,8 @@ public class MenuService(IRestaurantRepository restaurantRepository) : IMenuServ
             Name = product.Name,
             Description = product.Description,
             Price = product.Price,
+            Calories = product.Calories,
+            PreparationTimeMinutes = product.PreparationTimeMinutes,
             Tags = product.ProductTags
                 .OrderBy(x => x.Tag.Name)
                 .Select(x => x.Tag.Name)

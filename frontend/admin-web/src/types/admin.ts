@@ -32,6 +32,9 @@ export type AdminProduct = {
   price: number;
   description: string;
   content: string;
+  calories: number | null;
+  preparationTimeMinutes: number | null;
+  allergens: string[];
   tags: string[];
   variants: AdminProductVariant[];
   isActive: boolean;
@@ -52,6 +55,9 @@ export type SaveAdminProductRequest = {
   price: number;
   description: string;
   content: string;
+  calories: number | null;
+  preparationTimeMinutes: number | null;
+  allergens: string[];
   tags: string[];
   variants: SaveAdminProductVariantRequest[];
   isActive: boolean;
