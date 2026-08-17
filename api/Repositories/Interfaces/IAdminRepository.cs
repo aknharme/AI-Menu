@@ -31,6 +31,7 @@ public interface IAdminRepository
 
     Task<int> GetOrderCountAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, CancellationToken cancellationToken = default);
     Task<int> GetPendingOrderCountAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, CancellationToken cancellationToken = default);
+    Task<(decimal Revenue, decimal ActiveOrderValue, decimal CancelledOrderValue, int PaidOrderCount)> GetRevenueSummaryAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, CancellationToken cancellationToken = default);
     Task<IReadOnlyCollection<Order>> GetRecentOrdersAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, int limit, CancellationToken cancellationToken = default);
-    Task<IReadOnlyCollection<(Guid ProductId, string Name, int Count)>> GetTopOrderedProductsAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, int limit, CancellationToken cancellationToken = default);
+    Task<IReadOnlyCollection<(Guid ProductId, string Name, int Count, decimal Revenue)>> GetTopOrderedProductsAsync(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc, int limit, CancellationToken cancellationToken = default);
 }

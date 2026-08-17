@@ -35,7 +35,7 @@
       Jwt__ExpirationMinutes: ${JWT_EXPIRATION_MINUTES:-180}
       AiWaiterApi__BaseUrl: ${AI_WAITER_API_BASE_URL:-http://host.docker.internal:7001}
       AiWaiterApi__ChatPath: ${AI_WAITER_API_CHAT_PATH:-/api/waiter/chat}
-      AiWaiterApi__TimeoutSeconds: ${AI_WAITER_API_TIMEOUT_SECONDS:-10}
+      AiWaiterApi__TimeoutSeconds: ${AI_WAITER_API_TIMEOUT_SECONDS:-90}
     expose:
       - "8080"
   customer-web:

@@ -114,7 +114,7 @@ export default function AccountingPage() {
     return {
       grossTotal,
       cancelledTotal,
-      netTotal: grossTotal - cancelledTotal,
+      netTotal: deliveredTotal,
       deliveredTotal,
       openOrderTotal,
       orderCount: filteredOrders.length,
@@ -145,7 +145,7 @@ export default function AccountingPage() {
             </p>
             <h2 className="mt-2 text-3xl font-semibold">Gunluk gelir kontrolu</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-stone-200">
-              Secilen tarihte gelen siparisleri topla, iptal edilenleri dus ve gun icindeki net akisi hizlica gor.
+              Seçilen tarihte tamamlanıp ödenen siparişlerin gerçekleşmiş cirosunu ve açık sipariş tutarını ayrı takip edin.
             </p>
           </div>
 
@@ -199,7 +199,7 @@ export default function AccountingPage() {
             <article className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm shadow-stone-950/5">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-stone-400">Net Ciro</p>
               <p className="mt-4 text-3xl font-semibold text-stone-950">{formatPrice(summary.netTotal)}</p>
-              <p className="mt-2 text-sm text-stone-500">Iptaller dusulmus secili tarih geliri</p>
+              <p className="mt-2 text-sm text-stone-500">Yalnızca teslim edilmiş ve ödenmiş siparişler</p>
             </article>
 
             <article className="rounded-[28px] border border-rose-200 bg-rose-50 p-5 shadow-sm shadow-rose-950/5">
@@ -259,9 +259,9 @@ export default function AccountingPage() {
               </div>
 
               <div className="mt-5 rounded-[24px] border border-dashed border-stone-300 bg-stone-50 px-4 py-4 text-sm leading-6 text-stone-600">
-                Formul: <span className="font-semibold text-stone-900">Net Ciro = Brut Toplam - Iptal Dusumu</span>
+                Formül: <span className="font-semibold text-stone-900">Net Ciro = Teslim edilmiş ve ödenmiş siparişler</span>
                 <br />
-                Acik Bakiye ise henuz teslim edilmemis ama sistemde aktif duran siparislerin toplam tutarini gosterir.
+                Açık bakiye henüz tamamlanmamış siparişleri gösterir ve gerçekleşmiş ciroya eklenmez.
               </div>
             </div>
 
