@@ -92,6 +92,11 @@ export type DashboardSummary = {
   date?: string | null;
   totalOrderCount: number;
   pendingOrderCount: number;
+  paidOrderCount: number;
+  revenue: number;
+  activeOrderValue: number;
+  cancelledOrderValue: number;
+  averagePaidOrderValue: number;
   recentOrders: RecentOrder[];
   topProducts: TopProduct[];
   popularProducts: TopProduct[];
@@ -102,6 +107,7 @@ export type TopProduct = {
   productId: string;
   name: string;
   count: number;
+  revenue: number;
 };
 
 // RecentOrder, dashboard'da gosterilen son siparisler satirini tasir.

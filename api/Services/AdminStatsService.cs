@@ -22,6 +22,7 @@ public class AdminStatsService(IAdminRepository adminRepository) : IAdminStatsSe
         var (startUtc, endUtc) = BuildDateRange(date);
         var totalOrderCount = await adminRepository.GetOrderCountAsync(restaurantId, startUtc, endUtc, cancellationToken);
         var pendingOrderCount = await adminRepository.GetPendingOrderCountAsync(restaurantId, startUtc, endUtc, cancellationToken);
+        var revenueSummary = await adminRepository.GetRevenueSummaryAsync(restaurantId, startUtc, endUtc, cancellationToken);
         var recentOrders = await GetRecentOrdersAsync(restaurantId, date, cancellationToken) ?? [];
         var topProducts = await GetTopProductsAsync(restaurantId, date, cancellationToken) ?? [];
 
@@ -31,6 +32,13 @@ public class AdminStatsService(IAdminRepository adminRepository) : IAdminStatsSe
             Date = date,
             TotalOrderCount = totalOrderCount,
             PendingOrderCount = pendingOrderCount,
+            PaidOrderCount = revenueSummary.PaidOrderCount,
+            Revenue = revenueSummary.Revenue,
+            ActiveOrderValue = revenueSummary.ActiveOrderValue,
+            CancelledOrderValue = revenueSummary.CancelledOrderValue,
+            AveragePaidOrderValue = revenueSummary.PaidOrderCount == 0
+                ? 0
+                : decimal.Round(revenueSummary.Revenue / revenueSummary.PaidOrderCount, 2),
             RecentOrders = recentOrders.Take(DashboardRecentOrdersLimit).ToList(),
             TopProducts = topProducts.Take(DashboardTopProductsLimit).ToList(),
             PopularProducts = topProducts.Take(DashboardTopProductsLimit).ToList()
@@ -60,7 +68,8 @@ public class AdminStatsService(IAdminRepository adminRepository) : IAdminStatsSe
             {
                 ProductId = product.ProductId,
                 Name = product.Name,
-                Count = product.Count
+                Count = product.Count,
+                Revenue = product.Revenue
             })
             .ToList();
     }

@@ -830,7 +830,7 @@ public static class AppDbSeeder
                 CustomerName = "Ayse",
                 Note = "Sos ayri gelsin.",
                 Status = "Paid",
-                TotalAmount = 350m,
+                TotalAmount = 380m,
                 CreatedAtUtc = ninetyMinutesAgo
             },
             new Order

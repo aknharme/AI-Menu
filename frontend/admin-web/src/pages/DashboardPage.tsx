@@ -15,6 +15,14 @@ import type {
   TopProduct,
 } from '../types/admin';
 
+function getTodayValue() {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 // DashboardPage restoran yönetiminin ilk admin ekranıdır.
 export default function DashboardPage() {
   const { customerBaseUrl, restaurantId } = useRestaurantContext();
@@ -24,6 +32,7 @@ export default function DashboardPage() {
   const [liveOrders, setLiveOrders] = useState<AdminOrderListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const today = getTodayValue();
 
   useEffect(() => {
     let isMounted = true;
@@ -40,9 +49,9 @@ export default function DashboardPage() {
           liveOrdersResponse,
         ] =
           await Promise.all([
-            getDashboard(restaurantId),
-            getTopProducts(restaurantId),
-            getRecentOrders(restaurantId),
+            getDashboard(restaurantId, today),
+            getTopProducts(restaurantId, today),
+            getRecentOrders(restaurantId, today),
             getAdminOrders(restaurantId),
           ]);
 
@@ -72,7 +81,7 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [restaurantId]);
+  }, [restaurantId, today]);
 
   const hasAnyListData =
     topProducts.length > 0 || recentOrders.length > 0;
@@ -101,7 +110,7 @@ export default function DashboardPage() {
       <section className="space-y-2">
         <h2 className="text-2xl font-semibold text-stone-950">Dashboard</h2>
         <p className="text-sm leading-6 text-stone-600">
-          Restoran menüsü, masalar ve sipariş özetleri buradan yönetilecek.
+          Bugünün gerçekleşen cirosunu, siparişlerini ve en çok satılan ürünlerini takip edin.
         </p>
       </section>
 
@@ -119,11 +128,16 @@ export default function DashboardPage() {
           {error}
         </section>
       ) : (
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Toplam Sipariş"
+            label="Günlük Ciro"
+            value={formatPrice(summary?.revenue ?? 0)}
+            hint={`${summary?.paidOrderCount ?? 0} tamamlanan sipariş`}
+          />
+          <StatCard
+            label="Bugünkü Sipariş"
             value={String(summary?.totalOrderCount ?? 0)}
-            hint={`Tum zamanlar | ${liveOrders.length} siparis kaydi`}
+            hint={`${liveCount} aktif sipariş`}
           />
           <StatCard
             label="Bekleyen Sipariş"
@@ -131,9 +145,14 @@ export default function DashboardPage() {
             hint={`Anlik durum | ${liveCount} aktif siparis`}
           />
           <StatCard
-            label="Günün Popüleri"
-            value={summary?.popularProducts[0]?.name ?? 'Veri Yok'}
-            hint={summary?.popularProducts[0] ? `${summary.popularProducts[0].count} adet` : 'Fallback'}
+            label="Ortalama Sepet"
+            value={formatPrice(summary?.averagePaidOrderValue ?? 0)}
+            hint="Tamamlanan sipariş ortalaması"
+          />
+          <StatCard
+            label="Açık Sipariş Tutarı"
+            value={formatPrice(summary?.activeOrderValue ?? 0)}
+            hint={`${liveCount} sipariş hâlâ akışta`}
           />
         </section>
       )}
@@ -163,6 +182,41 @@ export default function DashboardPage() {
                       <span>{formatPrice(order.totalAmount)}</span>
                       <span>{formatTime(order.createdAtUtc)}</span>
                     </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+          <div className="rounded-[28px] border border-stone-200 bg-white p-5 shadow-sm shadow-stone-950/5">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-semibold text-stone-950">En Çok Satılanlar</h3>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                Bugün
+              </span>
+            </div>
+            <div className="mt-4 space-y-3">
+              {topProducts.length === 0 ? (
+                <p className="rounded-2xl bg-stone-50 px-4 py-6 text-sm text-stone-500">
+                  Bugün tamamlanmış ürün satışı bulunmuyor.
+                </p>
+              ) : (
+                topProducts.map((product, index) => (
+                  <div
+                    key={product.productId}
+                    className="flex items-center justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-stone-950 text-xs font-semibold text-white">
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-stone-900">{product.name}</p>
+                        <p className="text-xs text-stone-500">{product.count} adet satıldı</p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 text-sm font-semibold text-stone-900">
+                      {formatPrice(product.revenue)}
+                    </span>
                   </div>
                 ))
               )}
@@ -216,4 +270,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

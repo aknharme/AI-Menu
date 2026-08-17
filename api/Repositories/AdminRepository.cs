@@ -186,6 +186,27 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
             .CountAsync(order => order.Status == "Pending", cancellationToken);
     }
 
+    public async Task<(decimal Revenue, decimal ActiveOrderValue, decimal CancelledOrderValue, int PaidOrderCount)> GetRevenueSummaryAsync(
+        Guid restaurantId,
+        DateTimeOffset? startUtc,
+        DateTimeOffset? endUtc,
+        CancellationToken cancellationToken = default)
+    {
+        var orders = BuildOrderQuery(restaurantId, startUtc, endUtc).AsNoTracking();
+        var revenue = await orders
+            .Where(order => order.Status == "Paid")
+            .SumAsync(order => (decimal?)order.TotalAmount, cancellationToken) ?? 0m;
+        var activeOrderValue = await orders
+            .Where(order => order.Status == "Pending" || order.Status == "Preparing" || order.Status == "Ready")
+            .SumAsync(order => (decimal?)order.TotalAmount, cancellationToken) ?? 0m;
+        var cancelledOrderValue = await orders
+            .Where(order => order.Status == "Cancelled")
+            .SumAsync(order => (decimal?)order.TotalAmount, cancellationToken) ?? 0m;
+        var paidOrderCount = await orders.CountAsync(order => order.Status == "Paid", cancellationToken);
+
+        return (revenue, activeOrderValue, cancelledOrderValue, paidOrderCount);
+    }
+
     public async Task<IReadOnlyCollection<Order>> GetRecentOrdersAsync(
         Guid restaurantId,
         DateTimeOffset? startUtc,
@@ -201,7 +222,7 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
             .ToListAsync(cancellationToken);
     }
 
-    public async Task<IReadOnlyCollection<(Guid ProductId, string Name, int Count)>> GetTopOrderedProductsAsync(
+    public async Task<IReadOnlyCollection<(Guid ProductId, string Name, int Count, decimal Revenue)>> GetTopOrderedProductsAsync(
         Guid restaurantId,
         DateTimeOffset? startUtc,
         DateTimeOffset? endUtc,
@@ -210,7 +231,7 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
     {
         var query = dbContext.OrderItems
             .AsNoTracking()
-            .Where(orderItem => orderItem.RestaurantId == restaurantId);
+            .Where(orderItem => orderItem.RestaurantId == restaurantId && orderItem.Order.Status == "Paid");
 
         if (startUtc.HasValue)
         {
@@ -228,14 +249,15 @@ public class AdminRepository(AppDbContext dbContext) : IAdminRepository
             {
                 group.Key.ProductId,
                 group.Key.Name,
-                Count = group.Sum(orderItem => orderItem.Quantity)
+                Count = group.Sum(orderItem => orderItem.Quantity),
+                Revenue = group.Sum(orderItem => orderItem.LineTotal)
             })
             .OrderByDescending(result => result.Count)
             .ThenBy(result => result.Name)
             .Take(limit)
             .ToListAsync(cancellationToken);
 
-        return data.Select(result => (result.ProductId, result.Name, result.Count)).ToList();
+        return data.Select(result => (result.ProductId, result.Name, result.Count, result.Revenue)).ToList();
     }
 
     private IQueryable<Order> BuildOrderQuery(Guid restaurantId, DateTimeOffset? startUtc, DateTimeOffset? endUtc)
