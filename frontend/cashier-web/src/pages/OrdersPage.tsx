@@ -3,6 +3,7 @@ import EmptyState from '../components/EmptyState';
 import LoadingState from '../components/LoadingState';
 import OrderCard from '../components/OrderCard';
 import OrderDetailDrawer from '../components/OrderDetailDrawer';
+import PrintingStatus from '../components/PrintingStatus';
 import { useCashierOrders } from '../hooks/useCashierOrders';
 import { useRestaurantId } from '../hooks/useRestaurantId';
 
@@ -34,6 +35,7 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
+      <PrintingStatus />
       <section className="overflow-hidden rounded-[32px] border border-stone-200 bg-[linear-gradient(135deg,_#1c1917_0%,_#334155_55%,_#f97316_180%)] p-6 text-white shadow-lg shadow-stone-950/10">
         <div className="grid gap-4 md:grid-cols-3">
           <div>

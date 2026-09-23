@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
 using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 
@@ -12,6 +13,11 @@ public class GlobalExceptionHandlingMiddleware(RequestDelegate next, ILogger<Glo
         try
         {
             await next(context);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            await WriteErrorAsync(context, StatusCodes.Status409Conflict,
+                ApiErrorResponseDto.Create("Kayıt başka bir işlemle güncellendi. Ekranı yenileyip tekrar deneyin.", "conflict"));
         }
         catch (InvalidOperationException exception)
         {

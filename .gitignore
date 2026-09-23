@@ -47,6 +47,7 @@ coverage/
 .env.local
 .env.*.local
 *.local
+**/appsettings.Local.json
 !*.env.example
 
 # Infra / local data

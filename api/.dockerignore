@@ -1,5 +1,7 @@
-bin
-obj
+bin/
+obj/
+appsettings.Local.json
+*.log
 .vs
 .idea
 *.user

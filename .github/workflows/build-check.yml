@@ -32,6 +32,9 @@ jobs:
       - name: Build API
         run: dotnet build api/AiMenu.Api.csproj --configuration Release --no-restore
 
+      - name: Test API
+        run: dotnet test tests/AiMenu.Api.Tests/AiMenu.Api.Tests.csproj --configuration Release --nologo
+
   build-frontends:
     name: Build ${{ matrix.app }}
     runs-on: ubuntu-latest

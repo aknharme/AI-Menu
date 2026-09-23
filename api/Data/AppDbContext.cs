@@ -21,10 +21,58 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<User> Users => Set<User>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
     public DbSet<OrderStatusLog> OrderStatusLogs => Set<OrderStatusLog>();
+    public DbSet<PrintRoute> PrintRoutes => Set<PrintRoute>();
+    public DbSet<PrintPairingCode> PrintPairingCodes => Set<PrintPairingCode>();
+    public DbSet<PrintDevice> PrintDevices => Set<PrintDevice>();
+    public DbSet<PrintJob> PrintJobs => Set<PrintJob>();
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var entry in ChangeTracker.Entries().Where(e => e.State == EntityState.Modified))
+            if (entry.Entity is Order or PrintJob or PrintPairingCode)
+                entry.Property("Version").CurrentValue = Guid.NewGuid();
+        return base.SaveChangesAsync(cancellationToken);
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<PrintRoute>(entity =>
+        {
+            entity.HasKey(x => x.CategoryId);
+            entity.Property(x => x.Station).HasMaxLength(16);
+            entity.HasOne<Category>().WithMany().HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasIndex(x => x.RestaurantId);
+        });
+        modelBuilder.Entity<PrintPairingCode>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.CodeHash).HasMaxLength(64);
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasIndex(x => x.CodeHash).IsUnique();
+            entity.HasOne<Restaurant>().WithMany().HasForeignKey(x => x.RestaurantId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<PrintDevice>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.TokenHash).HasMaxLength(64);
+            entity.Property(x => x.Name).HasMaxLength(80);
+            entity.HasIndex(x => x.TokenHash).IsUnique();
+            entity.HasIndex(x => x.RestaurantId).IsUnique();
+            entity.HasOne<Restaurant>().WithMany().HasForeignKey(x => x.RestaurantId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<PrintJob>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Station).HasMaxLength(16);
+            entity.Property(x => x.State).HasMaxLength(24);
+            entity.Property(x => x.Error).HasMaxLength(300);
+            entity.Property(x => x.Version).IsConcurrencyToken();
+            entity.HasIndex(x => new { x.OrderId, x.Station }).IsUnique();
+            entity.HasIndex(x => new { x.RestaurantId, x.State, x.CreatedAtUtc });
+            entity.HasOne<Order>().WithMany().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne<Restaurant>().WithMany().HasForeignKey(x => x.RestaurantId).OnDelete(DeleteBehavior.Restrict);
+        });
 
         modelBuilder.Entity<Restaurant>(entity =>
         {
@@ -219,6 +267,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Order>(entity =>
         {
             entity.HasKey(x => x.OrderId);
+            entity.Property(x => x.Version).IsConcurrencyToken();
             entity.Property(x => x.CustomerName).HasMaxLength(120);
             entity.Property(x => x.Note).HasMaxLength(500);
             entity.Property(x => x.Status).HasMaxLength(40).IsRequired();

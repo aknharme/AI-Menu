@@ -3,7 +3,6 @@ import { getCashierOrderDetail, getCashierOrders, updateCashierOrderStatus } fro
 import {
   addCashierActivityLogs,
   clearCustomerActiveOrder,
-  getCashierOrderStatusOverride,
   saveCashierOrderStatusOverride,
 } from '../services/cashierActivityLogService';
 import type { CashierOrderDetail, CashierOrderListItem } from '../types/order';
@@ -60,11 +59,6 @@ export function useCashierOrders({ restaurantId }: UseCashierOrdersOptions) {
     );
   }
 
-  function applyLocalStatusOverride<T extends CashierOrderListItem | CashierOrderDetail>(order: T) {
-    const localStatus = getCashierOrderStatusOverride(order.restaurantId, order.orderId);
-    return localStatus ? { ...order, status: localStatus } : order;
-  }
-
   function findOrderTableId(orderId: string) {
     if (selectedOrder?.orderId === orderId) {
       return selectedOrder.tableId;
@@ -76,7 +70,9 @@ export function useCashierOrders({ restaurantId }: UseCashierOrdersOptions) {
   useEffect(() => {
     let isMounted = true;
 
-    async function loadOrders() {
+    let refreshing = false;
+    async function loadOrders(silent = false) {
+      if (refreshing) return;
       if (!restaurantId) {
         setLoading(false);
         setError('Restoran bilgisi bulunamadi. restaurantId ile acmayi deneyin.');
@@ -85,7 +81,8 @@ export function useCashierOrders({ restaurantId }: UseCashierOrdersOptions) {
       }
 
       try {
-        setLoading(true);
+        refreshing = true;
+        if (!silent) setLoading(true);
         setError(null);
         const data = await getCashierOrders(restaurantId);
 
@@ -93,7 +90,7 @@ export function useCashierOrders({ restaurantId }: UseCashierOrdersOptions) {
           return;
         }
 
-        setOrders(data.map((order) => applyLocalStatusOverride(order)));
+        setOrders(data);
         setSelectedOrderId((current) => current ?? data[0]?.orderId ?? null);
       } catch {
         if (!isMounted) {
@@ -103,6 +100,7 @@ export function useCashierOrders({ restaurantId }: UseCashierOrdersOptions) {
         setError('Siparis listesi yuklenemedi. Lutfen tekrar deneyin.');
         setOrders([]);
       } finally {
+        refreshing = false;
         if (isMounted) {
           setLoading(false);
         }
@@ -110,9 +108,11 @@ export function useCashierOrders({ restaurantId }: UseCashierOrdersOptions) {
     }
 
     loadOrders();
+    const interval = window.setInterval(() => void loadOrders(true), 5000);
 
     return () => {
       isMounted = false;
+      window.clearInterval(interval);
     };
   }, [restaurantId]);
 
@@ -133,7 +133,7 @@ export function useCashierOrders({ restaurantId }: UseCashierOrdersOptions) {
         const detail = await getCashierOrderDetail(restaurantId, selectedOrderId);
 
         if (isMounted) {
-          setSelectedOrder(applyLocalStatusOverride(detail));
+          setSelectedOrder(detail);
         }
       } catch {
         if (isMounted) {

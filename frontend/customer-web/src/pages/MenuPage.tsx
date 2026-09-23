@@ -17,8 +17,8 @@ type MenuGroupView = {
 function normalizeMenuText(value: string) {
   return value
     .toLocaleLowerCase('tr-TR')
-    .replace(/Ä±/g, 'i')
-    .replace(/Ä°/g, 'i')
+    .replace(/ı/g, 'i')
+    .replace(/İ/g, 'i')
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
 }
@@ -93,6 +93,7 @@ export default function MenuPage() {
   const {
     loading,
     error,
+    menu,
     categories,
     products,
     selectedProduct,
@@ -197,7 +198,7 @@ export default function MenuPage() {
       return matchesSearch;
     });
   }, [activeCategoryId, activeGroupCategories, menuSearch, products]);
-  const restaurantName = 'Van Irish Pub';
+  const restaurantName = menu?.restaurantName ?? 'Menü';
   return (
     <div className="min-h-screen bg-[#f4ead4] pb-28">
       <header className="relative overflow-hidden border-b-4 border-[#c8a34a] bg-[#14351f] px-4 pb-5 pt-4 text-[#f8efd9] shadow-xl shadow-[#0b2012]/25">
@@ -208,7 +209,7 @@ export default function MenuPage() {
             className="flex items-center justify-center gap-2 rounded-full border border-[#d8b95f]/50 bg-[#0f2818]/80 px-3 py-2 text-xs font-semibold text-[#f8efd9] shadow-sm active:scale-[0.98]"
           >
             <WifiIcon />
-            Wiâ€‘Fi baÄŸlan
+            Wi-Fi bağlan
           </button>
           <a
             href="https://www.instagram.com/"
@@ -244,11 +245,11 @@ export default function MenuPage() {
         </div>
       ) : error ? (
         <div className="px-4 py-6">
-          <EmptyState title="MenÃ¼ ÅŸu anda yÃ¼klenemedi" description={error} />
+          <EmptyState title="Menü şu anda yüklenemedi" description={error} />
         </div>
       ) : categories.length === 0 ? (
         <div className="px-4 py-6">
-          <EmptyState title="Aktif Ã¼rÃ¼n bulunamadÄ±" description="Bu restoran iÃ§in ÅŸu anda yayÄ±nda olan Ã¼rÃ¼n gÃ¶rÃ¼nmÃ¼yor." />
+          <EmptyState title="Aktif ürün bulunamadı" description="Bu restoran için şu anda yayında olan ürün görünmüyor." />
         </div>
       ) : (
         <>
@@ -258,7 +259,7 @@ export default function MenuPage() {
               <input
                 value={menuSearch}
                 onChange={(event) => setMenuSearch(event.target.value)}
-                placeholder="ÃœrÃ¼n, iÃ§erik veya kategori ara"
+                placeholder="Ürün, içerik veya kategori ara"
                 className="min-w-0 flex-1 bg-transparent text-sm font-medium text-[#14351f] outline-none placeholder:text-[#8a8068]"
               />
             </label>
@@ -309,7 +310,7 @@ export default function MenuPage() {
                     >
                       <span className="block truncate text-sm font-semibold">{category.name}</span>
                       <span className="mt-1 block text-xs opacity-65">
-                        {category.products.length} Ã¼rÃ¼n
+                        {category.products.length} ürün
                       </span>
                     </button>
                   );
@@ -318,13 +319,13 @@ export default function MenuPage() {
               </div>
             ) : null}
             <div className="flex items-center justify-between gap-4">
-              <h2 className="pub-display text-lg font-bold text-[#14351f]">{activeGroup?.label ?? 'MenÃ¼'}</h2>
+              <h2 className="pub-display text-lg font-bold text-[#14351f]">{activeGroup?.label ?? 'Menü'}</h2>
               <span className="rounded-full border border-[#d8b95f] bg-[#fff8e9] px-3 py-1.5 text-xs font-semibold text-[#14351f]">
-                {visibleProducts.length} Ã¼rÃ¼n
+                {visibleProducts.length} ürün
               </span>
             </div>
             {visibleProducts.length === 0 ? (
-              <EmptyState title="ÃœrÃ¼n bulunamadÄ±" description="Arama ya da filtreyi deÄŸiÅŸtirerek tekrar deneyebilirsin." />
+              <EmptyState title="Ürün bulunamadı" description="Arama ya da filtreyi değiştirerek tekrar deneyebilirsin." />
             ) : (
               <div className="grid gap-3">
                 {visibleProducts.map((product) => (

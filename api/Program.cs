@@ -28,6 +28,7 @@ if (!File.Exists(Path.Combine(contentRoot, "appsettings.json")) && File.Exists(P
 var configuration = new ConfigurationBuilder()
     .SetBasePath(contentRoot)
     .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+    .AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false)
     .AddEnvironmentVariables()
     .AddCommandLine(args)
     .Build();
@@ -40,6 +41,7 @@ var isDevelopment = string.Equals(environmentName, "Development", StringComparis
 // Bu ortamda WebApplication.CreateBuilder takıldığı için aynı pipeline klasik WebHostBuilder ile kuruluyor.
 var host = new WebHostBuilder()
     .UseKestrel()
+    .UseEnvironment(environmentName)
     .UseContentRoot(contentRoot)
     .UseConfiguration(configuration)
     .UseUrls(urls)
@@ -124,6 +126,18 @@ var host = new WebHostBuilder()
         services.AddRateLimiter(options =>
         {
             options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.AddPolicy("PrinterPairing", context => RateLimitPartition.GetFixedWindowLimiter(
+                context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 5, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+            options.AddPolicy("AiChat", context =>
+                RateLimitPartition.GetFixedWindowLimiter(
+                    context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions
+                    {
+                        PermitLimit = 12,
+                        Window = TimeSpan.FromMinutes(1),
+                        QueueLimit = 0
+                    }));
             options.AddPolicy("PublicOrders", context =>
                 RateLimitPartition.GetFixedWindowLimiter(
                     context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -152,9 +166,16 @@ var host = new WebHostBuilder()
         // JWT ayarlari login ve panel erisimleri icin tek noktadan okunur.
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
 
-        // Ollama ayarlari eski lokal model entegrasyonu icin tutulur.
-        services.Configure<OllamaOptions>(configuration.GetSection("Ollama"));
-        services.Configure<AiWaiterApiOptions>(configuration.GetSection("AiWaiterApi"));
+        services.AddOptions<OpenAiOptions>()
+            .Bind(configuration.GetSection("OpenAI"))
+            .Validate(options => !string.IsNullOrWhiteSpace(options.Model), "OpenAI modeli boş olamaz.")
+            .Validate(options => options.MaxOutputTokens is >= 100 and <= 1000, "Yanıt token sınırı 100-1000 arasında olmalı.")
+            .Validate(options => options.MaxMenuCharacters is >= 1000 and <= 50000, "Menü karakter sınırı 1000-50000 arasında olmalı.")
+            .Validate(options => options.TimeoutSeconds is >= 5 and <= 30, "OpenAI zaman aşımı 5-30 saniye arasında olmalı.")
+            .ValidateOnStart();
+        services.AddSingleton<WaiterQuickReplies>();
+        // Tüm istemciler için ortak eşzamanlı dış istek sınırı.
+        services.AddSingleton<OpenAiRequestGate>();
 
         var jwtOptions = configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
         if (!isDevelopment && jwtOptions.SecretKey.Contains("Local_Development", StringComparison.OrdinalIgnoreCase))
@@ -166,6 +187,7 @@ var host = new WebHostBuilder()
 
         // JWT middleware admin ve cashier panellerinin bearer token ile korunmasini saglar.
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, PrintDeviceAuthenticationHandler>("PrintDevice", _ => { })
             .AddJwtBearer(options =>
             {
                 options.TokenValidationParameters = new TokenValidationParameters
@@ -200,13 +222,13 @@ var host = new WebHostBuilder()
         services.AddScoped<IOrderService, OrderService>();
         services.AddScoped<ICashierService, CashierService>();
         services.AddScoped<IAiService, AiService>();
+        services.AddScoped<PrintingService>();
 
-        // AI Menu Backend dogrudan Ollama'ya gitmez; AiWaiterApi uzerinden modele ulasir.
-        services.AddHttpClient<IAiWaiterClient, AiWaiterClient>(client =>
+        services.AddHttpClient<IAiWaiterClient, OpenAiWaiterClient>((provider, client) =>
         {
-            var aiWaiterOptions = configuration.GetSection("AiWaiterApi").Get<AiWaiterApiOptions>() ?? new AiWaiterApiOptions();
-            client.BaseAddress = new Uri(aiWaiterOptions.BaseUrl.TrimEnd('/') + "/");
-            client.Timeout = TimeSpan.FromSeconds(Math.Max(1, aiWaiterOptions.TimeoutSeconds));
+            var options = provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<OpenAiOptions>>().Value;
+            client.BaseAddress = new Uri("https://api.openai.com/v1/");
+            client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
         });
     })
     .Configure(app =>

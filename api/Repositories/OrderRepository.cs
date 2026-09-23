@@ -2,6 +2,7 @@ using AiMenu.Api.Data;
 using AiMenu.Api.Entities;
 using AiMenu.Api.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using AiMenu.Api.Services;
 
 namespace AiMenu.Api.Repositories;
 
@@ -97,6 +98,19 @@ public class OrderRepository(AppDbContext dbContext) : IOrderRepository
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        // Onay ve baskı işleri aynı SaveChanges/DB transaction içinde kalıcılaşır.
+        var approvals = dbContext.ChangeTracker.Entries<Order>()
+            .Where(e => e.State == EntityState.Modified &&
+                e.Property(o => o.Status).OriginalValue == "Pending" && e.Entity.Status == "Preparing")
+            .Select(e => e.Entity).ToList();
+        foreach (var order in approvals)
+            await PrintJobFactory.StageApprovalAsync(dbContext, order, cancellationToken);
+
+        var cancellations = dbContext.ChangeTracker.Entries<Order>()
+            .Where(e => e.State == EntityState.Modified && e.Entity.Status == "Cancelled")
+            .Select(e => e.Entity.OrderId).ToList();
+        foreach (var job in await dbContext.PrintJobs.Where(j => cancellations.Contains(j.OrderId) && j.State == "Pending").ToListAsync(cancellationToken))
+            job.State = "Cancelled";
         await dbContext.SaveChangesAsync(cancellationToken);
     }
 }

@@ -8,6 +8,7 @@ public class Order
     public string CustomerName { get; set; } = string.Empty;
     public string Note { get; set; } = string.Empty;
     public string Status { get; set; } = "Pending";
+    public Guid Version { get; set; } = Guid.NewGuid();
     public decimal TotalAmount { get; set; }
     public DateTimeOffset CreatedAtUtc { get; set; } = DateTimeOffset.UtcNow;
 

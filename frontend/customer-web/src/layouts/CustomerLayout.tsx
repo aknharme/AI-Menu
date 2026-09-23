@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import CartButton from '../components/CartButton';
+import AiWaiterChat from '../components/AiWaiterChat';
 import CartDrawer from '../components/CartDrawer';
 import { useCart } from '../contexts/CartContext';
 import { useQueryParams } from '../hooks/useQueryParams';
@@ -132,6 +133,7 @@ export default function CustomerLayout() {
         onOrderCreated={(order) => setActiveOrder(order)}
         onClose={() => setIsCartOpen(false)}
       />
+      <AiWaiterChat key={`${restaurantId}:${tableId}`} restaurantId={restaurantId} />
     </div>
   );
 }

@@ -33,10 +33,13 @@ public class AuthController(IAuthService authService) : ControllerBase
     }
 
     [HttpPost("register")]
+    [Authorize(Roles = AppRoles.Admin)]
     [ProducesResponseType(typeof(AuthResponseDto), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(ApiErrorResponseDto), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request, CancellationToken cancellationToken)
     {
+        if (!Guid.TryParse(User.FindFirstValue("restaurantId"), out var restaurantId) || restaurantId != request.RestaurantId)
+            return Forbid();
         if (request.RestaurantId == Guid.Empty ||
             string.IsNullOrWhiteSpace(request.FullName) ||
             string.IsNullOrWhiteSpace(request.Email) ||

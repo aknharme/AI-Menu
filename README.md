@@ -11,7 +11,7 @@ Multi-restaurant destekli QR menu, siparis, admin ve cashier yonetimi sunan full
 
 ## Teknolojiler
 
-- Backend: ASP.NET Core 8, Entity Framework Core, PostgreSQL
+- Backend: ASP.NET Core 9, Entity Framework Core, PostgreSQL
 - Frontend: React, Vite, TypeScript, Tailwind CSS, React Router
 - Auth: JWT
 - Infra: Docker Compose, Nginx
@@ -80,6 +80,10 @@ Docker uzerinden servisler:
 4. Admin panel urun, kategori, masa ve dashboard ekranlarini yonetir.
 
 ## Diger Dokumanlar
+
+- [Yapay zekâ garson kurulumu](docs/ai-waiter-setup.md)
+- [Mutfak/bar yazıcı altyapısı ve kurulum](docs/restaurant-printing.md)
+- [Proje incelemesi ve eksikler](docs/project-review.md)
 
 - [frontend/frontend-readme.md](frontend/frontend-readme.md)
 - [api/backend-readme.md](api/backend-readme.md)

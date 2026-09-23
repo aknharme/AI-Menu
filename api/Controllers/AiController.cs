@@ -3,6 +3,7 @@ using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace AiMenu.Api.Controllers;
 
@@ -12,9 +13,11 @@ public class AiController(IAiService aiService) : ControllerBase
 {
     /// <summary>
     /// Müşterinin web arayüzünden gönderdiği mesaja karşılık, 
-    /// veritabanı ürün listesini de katarak AiWaiterApi üzerinden cevap döner.
+    /// veritabanı menüsünden hazır yanıt veya OpenAI üzerinden cevap döner.
     /// </summary>
     [HttpPost("{restaurantId:guid}/chat")]
+    [EnableRateLimiting("AiChat")]
+    [RequestSizeLimit(32768)]
     [ProducesResponseType(typeof(AiChatResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

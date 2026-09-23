@@ -8,7 +8,8 @@ namespace AiMenu.Api.Services;
 public class AiService(
     IRestaurantRepository restaurantRepository,
     IAiWaiterClient aiWaiterClient,
-    ILogger<AiService> logger) : IAiService
+    ILogger<AiService> logger,
+    WaiterQuickReplies quickReplies) : IAiService
 {
     private static readonly IReadOnlyCollection<string> StrictWaiterRules =
     [
@@ -39,12 +40,19 @@ public class AiService(
             return null;
         }
 
+        var greeting = quickReplies.Greeting(request.Message);
+        if (greeting is not null) return greeting;
+
         var products = await restaurantRepository.GetActiveProductsAsync(restaurantId, cancellationToken);
+        var quickReply = quickReplies.MenuQuestion(request.Message, products);
+        if (quickReply is not null) return quickReply;
+
         var waiterRequest = new AiWaiterApiRequestDto
         {
             RestaurantId = restaurant.RestaurantId,
             RestaurantName = restaurant.Name,
             CustomerMessage = request.Message.Trim(),
+            History = request.History,
             Menu = products.Select(MapMenuItem).ToList(),
             Rules = StrictWaiterRules
         };

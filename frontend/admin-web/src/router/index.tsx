@@ -9,6 +9,7 @@ import OrderLogsPage from '../pages/OrderLogsPage';
 import OrdersPage from '../pages/OrdersPage';
 import ProductsPage from '../pages/ProductsPage';
 import TablesPage from '../pages/TablesPage';
+import PrintingPage from '../pages/PrintingPage';
 
 // Admin uygulamasında ana rota dashboard sayfasını render eder.
 export const router = createBrowserRouter(
@@ -25,6 +26,7 @@ export const router = createBrowserRouter(
           path: '/',
           element: <AdminLayout />,
           children: [
+            { path: 'printing', element: <PrintingPage /> },
             {
               index: true,
               element: <DashboardPage />,

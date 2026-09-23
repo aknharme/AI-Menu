@@ -1,6 +1,6 @@
 # Gelecek Yerel Model Kapisi
 
-Bu projede su anda yerel model entegrasyonu yoktur.
+Bu dosya eski yerel model planına aittir. Güncel sohbet uygulaması OpenAI Responses API kullanır; [kurulum ve mimari](ai-waiter-setup.md) belgesine bakın. Aşağıdaki notlar güncel uygulama durumunu anlatmaz.
 
 Sohbet, onerme, otomatik cevap ve model cagrisi yapan backend/frontend kodlari bilerek kaldirildi. Bu dosya sadece ileride yeni modeli temiz bir tasarimla tekrar baglamak icin pasif not olarak durur.
 

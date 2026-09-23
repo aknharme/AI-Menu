@@ -1,0 +1,20 @@
+# Proje incelemesi — 23 Eylül 2026
+
+İncelenen alanlar: backend başlangıç/ayarları, veri modeli ve restoran filtreleri, kimlik doğrulama, menü/sipariş/kasa servisleri, AI uç noktası, üç frontend'in servis ve durum yönetimi, müşteri menüsü/sepeti, Docker/Nginx ve CI/test altyapısı. Bu bir statik kod ve yerel çalışma incelemesidir; kapsamlı penetrasyon veya tüm ekranların uçtan uca testi değildir.
+
+## Öncelikli bulgular
+
+1. **Kritik — dışarıya açık yönetici kaydı (yazıcı entegrasyonunda düzeltildi).** `POST /api/auth/register` artık Admin rolü istiyor ve istenen restoranı JWT içindeki restoranla karşılaştırıyor. Ziyaretçi veya kasa kullanıcısı bu uç noktadan yönetici oluşturamaz. İlk restoran/yönetici hesabının güvenli kurulumu ve demo hesapların kaldırılması hâlâ canlıya çıkış adımıdır.
+2. **Yüksek — demo kimlik bilgileri ve kalıcılık.** `AppDbSeeder` ortam ayrımı olmadan bilinen demo hesapları oluşturuyor. `appsettings.Development.json` izlenen dosyada veritabanı kimlik bilgisi içeriyor; gerçekse değiştirilmeli ve secret yönetimine taşınmalı. Varsayılan JWT anahtarı demo anahtarı. Üretim kontrolü var, fakat demo verisi oluşturma ayrıca sınırlandırılmalı. Bağlantı ayarı yoksa InMemory kullanılıyor; yeniden başlatmada oturum sırasında eklenen veri kaybolur.
+3. **Yüksek — ayar dosyası beklentisi.** Özel `ConfigurationBuilder` standart `appsettings.{Environment}.json` dosyasını yüklemiyor. `appsettings.Development.json` içine yazılan PostgreSQL ayarı bu nedenle otomatik devreye girmiyor. Bu çalışmada mevcut DB davranışı değiştirilmedi; yeni gizli AI ayarı için açıkça `appsettings.Local.json` desteği eklendi. Host ortamının ayarla tutarlı olması sağlandı.
+4. **Orta — kasa iade/durum uyumsuzluğu.** `useCashierOrders.refundOrder` backend'e `Cancelled` gönderip yalnızca localStorage'da `Refunded` gösteriyor. Backend `CashierService` içinde `Paid` durumundan geçiş yok; ödenmiş siparişin iadesi bu yolla başarısız olabilir. İade ayrı backend işlemi ve kalıcı kayıt gerektiriyor. LocalStorage port/origin bazlı olduğundan 5173 ve 5175 arasında paylaşılamaz; paneller arası doğruluk için API esas alınmalı.
+5. **Orta — kimlik doğrulama yönlendirmesi.** Admin API interceptor'ı 401'de `/login` yoluna gidiyor; uygulama `/admin/` altında çalışıyor. Süresi dolmuş oturumda yanlış URL'ye yönlendirme riski var (`frontend/admin-web/src/services/api.ts`). Login için de hız sınırlaması eklenmeli.
+6. **Orta — menü/AI veri tutarlılığı (düzeltildi).** Backend hatasında customer-web farklı, sahte ürün/fiyatlar gösteriyordu. Demo fallback kaldırıldı, restoran adı API'den alınıyor. Layout ve sayfanın URL yolundaki restoran/masa bilgisini aynı şekilde çözmesi sağlandı; sohbet bağlam değişiminde temizleniyor. Müşteri menüsündeki bozuk Türkçe metinler düzeltildi.
+7. **Özellik sınırı — stok ve alerjenler.** Ürün modelinde gerçek stok adedi/yok satıldı alanı yok; `IsActive` ürünün yayında olup olmadığını gösteriyor. AI fiziksel stok garantisi vermez. Alerjen bilgileri personel tarafından doğrulanmalı; boş alan güvence değildir. Müşterinin serbest metin isteği otomatik siparişe çevrilmiyor; sepet onayı gerekiyor.
+8. **Bakım — test ve doküman boşlukları.** CI yalnızca derleme yapıyordu; backend test çalıştırması eklendi. AI testleri hazır yanıtlar, karma niyetler, restoran izolasyonu, input sınırları, OpenAI gövdesi ve hata durumlarını kapsıyor. README'deki .NET 8 ifadesi gerçek .NET 9 hedefiyle düzeltildi. Tüm panelleri kapsayan tarayıcı testleri ve PostgreSQL entegrasyon testleri hâlâ gerekli.
+
+## Eklenen AI işlevi
+
+Hazır yanıtlar + gerçek menü sorguları + OpenAI Responses API, sınırlı geçmiş/token/istek boyutu, IP bazlı hız sınırlaması, eşzamanlı çağrı sınırı, yerel secret dosyası ve müşteri sohbet baloncuğu. Kurulum ve sınırlar: [AI garson rehberi](ai-waiter-setup.md).
+
+Yeni entegrasyonun gerçek OpenAI yanıt kalitesi, kullanıcı anahtarı henüz girilmediğinden canlı model çağrısıyla doğrulanmadı. Bağlı tarayıcı bulunmadığından masaüstü/mobil görsel kontrol yapılamadı. Derleme, otomatik backend testleri ve gerçek HTTP uç noktası kontrolleri yapıldı.
