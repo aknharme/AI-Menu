@@ -2,20 +2,22 @@ using AiMenu.Api.Constants;
 using AiMenu.Api.DTOs;
 using AiMenu.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using AiMenu.Api.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace AiMenu.Api.Controllers;
 
 [ApiController]
 [Route("api/menu")]
 // MenuController sadece HTTP katmanidir; veri ve is kurali detayini service'e birakir.
-public class MenuController(IMenuService menuService) : ControllerBase
+public class MenuController(IMenuService menuService, AppDbContext dbContext) : ControllerBase
 {
     // Restoranın müşteri menüsünü kategori bazlı tek response olarak döndürür.
     [HttpGet("{restaurantId:guid}")]
     [ProducesResponseType(typeof(MenuResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetMenu(Guid restaurantId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMenu(Guid restaurantId, CancellationToken cancellationToken, [FromQuery] Guid? tableId = null)
     {
         if (restaurantId == Guid.Empty)
         {
@@ -26,6 +28,19 @@ public class MenuController(IMenuService menuService) : ControllerBase
         if (menu is null)
         {
             return NotFound(ApiErrorResponseDto.Create("Restaurant was not found or is inactive.", ApiErrorCodes.NotFound));
+        }
+
+        if (tableId.HasValue)
+        {
+            // Resolve only this QR's active table within the validated restaurant.
+            menu.TableName = await dbContext.Tables.AsNoTracking()
+                .Where(table => table.RestaurantId == restaurantId && table.TableId == tableId.Value && table.IsActive)
+                .Select(table => table.Name)
+                .SingleOrDefaultAsync(cancellationToken);
+            if (menu.TableName is null)
+            {
+                return NotFound(ApiErrorResponseDto.Create("Table was not found in this restaurant or is inactive.", ApiErrorCodes.NotFound));
+            }
         }
 
         return Ok(menu);

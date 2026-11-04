@@ -8,16 +8,9 @@ import { useQueryParams } from '../hooks/useQueryParams';
 import { getActiveOrderStorageEventName, getStoredActiveOrder } from '../utils/activeOrderStorage';
 import { formatPrice } from '../utils/formatPrice';
 import type { OrderResponse } from '../types/order';
+import { orderStatusLabels as statusLabels } from '../utils/orderStatus';
 
 type ActiveOrderSummary = Pick<OrderResponse, 'orderId' | 'status' | 'totalAmount'>;
-
-const statusLabels: Record<string, string> = {
-  Pending: 'Bekliyor',
-  Preparing: 'Hazırlanıyor',
-  Ready: 'Hazır',
-  Paid: 'Teslim edildi',
-  Cancelled: 'İptal edildi',
-};
 
 function formatOrderNumber(orderId: string) {
   return `#${orderId.slice(0, 8).toLocaleUpperCase('tr-TR')}`;

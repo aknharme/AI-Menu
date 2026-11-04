@@ -1,8 +1,7 @@
-export function formatTableLabel(tableId?: string) {
+export function formatTableLabel(tableId?: string, tableName?: string | null) {
   if (!tableId) {
-    return 'QR Siparis';
+    return 'QR Sipariş';
   }
 
-  const compactValue = tableId.length > 8 ? tableId.slice(0, 8).toUpperCase() : tableId;
-  return `Masa #${compactValue}`;
+  return tableName?.trim() || 'Masa bilgisi';
 }

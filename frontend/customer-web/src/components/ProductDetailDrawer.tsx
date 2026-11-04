@@ -11,6 +11,7 @@ type ProductDetailDrawerProps = {
   isLoading: boolean;
   error: string | null;
   tableId?: string;
+  tableName?: string | null;
   onAddToCart: (input: AddToCartInput) => void;
   onClose: () => void;
 };
@@ -22,6 +23,7 @@ export default function ProductDetailDrawer({
   isLoading,
   error,
   tableId,
+  tableName,
   onAddToCart,
   onClose,
 }: ProductDetailDrawerProps) {
@@ -114,7 +116,7 @@ export default function ProductDetailDrawer({
                   </p>
                   {tableId && (
                     <span className="rounded-full bg-[#e7f0df] px-3 py-1 text-xs font-semibold text-[#14351f] ring-1 ring-[#cfe0c6]">
-                      {formatTableLabel(tableId)}
+                      {formatTableLabel(tableId, tableName)}
                     </span>
                   )}
                 </div>

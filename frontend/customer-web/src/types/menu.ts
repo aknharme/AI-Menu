@@ -23,6 +23,7 @@ export type MenuCategory = {
 export type MenuResponse = {
   restaurantId: string;
   restaurantName: string;
+  tableName?: string | null;
   categories: MenuCategory[];
 };
 

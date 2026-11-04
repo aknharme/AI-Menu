@@ -9,7 +9,7 @@ function flattenCategoryProducts(categories: MenuCategory[]): ProductListItem[] 
   ]);
 }
 
-export function useMenu({ restaurantId }: { restaurantId?: string }) {
+export function useMenu({ restaurantId, tableId }: { restaurantId?: string; tableId?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [menu, setMenu] = useState<MenuResponse | null>(null);
@@ -29,14 +29,14 @@ export function useMenu({ restaurantId }: { restaurantId?: string }) {
       setLoading(false);
       return;
     }
-    getMenu(restaurantId)
+    getMenu(restaurantId, tableId)
       .then(data => { if (active) setMenu(data); })
       .catch(() => {
         if (active) setError('Menüye ulaşılamıyor. Lütfen bağlantınızı kontrol edip sayfayı yenileyin.');
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [restaurantId]);
+  }, [restaurantId, tableId]);
 
   useEffect(() => {
     let active = true;
