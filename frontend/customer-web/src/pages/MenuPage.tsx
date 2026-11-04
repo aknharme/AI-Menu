@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import EmptyState from '../components/EmptyState';
 import LoadingState from '../components/LoadingState';
 import ProductCard from '../components/ProductCard';
@@ -101,7 +101,7 @@ export default function MenuPage() {
     productDetail,
     productDetailLoading,
     productDetailError,
-  } = useMenu({ restaurantId });
+  } = useMenu({ restaurantId, tableId });
   const [activeGroupId, setActiveGroupId] = useState<string>();
   const [activeCategoryId, setActiveCategoryId] = useState<string>();
   const [menuSearch, setMenuSearch] = useState('');
@@ -234,7 +234,7 @@ export default function MenuPage() {
           </div>
           {tableId ? (
             <span className="shrink-0 rounded-full border border-[#d8b95f]/70 bg-[#0f2818] px-3 py-2 text-xs font-semibold text-[#f8efd9] shadow-sm">
-              {formatTableLabel(tableId)}
+              {formatTableLabel(tableId, menu?.tableName)}
             </span>
           ) : null}
         </div>
@@ -350,6 +350,7 @@ export default function MenuPage() {
         isLoading={productDetailLoading}
         error={productDetailError}
         tableId={tableId}
+        tableName={menu?.tableName}
         onAddToCart={addToCart}
         onClose={() => setSelectedProduct(null)}
       />

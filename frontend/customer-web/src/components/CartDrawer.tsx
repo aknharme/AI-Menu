@@ -6,6 +6,7 @@ import { createOrder, getOrder } from '../services/orderService';
 import type { OrderResponse } from '../types/order';
 import { formatPrice } from '../utils/formatPrice';
 import { extractApiErrorMessage } from '../utils/apiError';
+import { orderStatusLabels as statusLabels, orderStatusDescriptions as statusDescriptions, orderSteps } from '../utils/orderStatus';
 import {
   clearActiveOrder,
   getStoredActiveOrder,
@@ -43,22 +44,6 @@ export default function CartDrawer({
   const [createdOrder, setCreatedOrder] = useState<OrderResponse | null>(null);
   const customerNameInputRef = useRef<HTMLInputElement | null>(null);
 
-  const statusLabels: Record<string, string> = {
-    Pending: 'Sipariş alındı',
-    Preparing: 'Sipariş onaylandı',
-    Ready: 'Sipariş hazırlanıyor',
-    Paid: 'Sipariş teslim edildi',
-    Cancelled: 'Sipariş iptal edildi',
-  };
-
-  const statusDescriptions: Record<string, string> = {
-    Pending: 'Siparişin mutfağa iletildi. Onay bekliyor.',
-    Preparing: 'Restoran siparişini gördü ve hazırlık sırasına aldı.',
-    Ready: 'Siparişin hazırlandı. Kısa süre içinde sana ulaşacak.',
-    Paid: 'Sipariş teslim edildi. Afiyet olsun.',
-    Cancelled: 'Sipariş işleme alınmadı. Gerekirse işletme ile görüşebilirsin.',
-  };
-
   const statusTone: Record<string, string> = {
     Pending: 'border-[#d8b95f] bg-[#fff8e9] text-[#14351f]',
     Preparing: 'border-[#d8b95f] bg-[#f4ead4] text-[#14351f]',
@@ -66,13 +51,6 @@ export default function CartDrawer({
     Paid: 'border-[#d8c998] bg-[#fff8e9] text-[#38543f]',
     Cancelled: 'border-rose-200 bg-rose-50 text-rose-800',
   };
-
-  const orderSteps = [
-    { key: 'Pending', label: 'Alindi' },
-    { key: 'Preparing', label: 'Onaylandi' },
-    { key: 'Ready', label: 'Hazirlaniyor' },
-    { key: 'Paid', label: 'Teslim edildi' },
-  ];
 
   useEffect(() => {
     const storedOrder = getStoredActiveOrder(restaurantId, tableId);
@@ -132,7 +110,7 @@ export default function CartDrawer({
 
     void refreshOrderStatus();
 
-    if (['Paid', 'Cancelled'].includes(createdOrder.status)) {
+    if (['Paid', 'Cancelled', 'Refunded'].includes(createdOrder.status)) {
       return () => {
         cancelled = true;
       };
@@ -285,7 +263,7 @@ export default function CartDrawer({
               <div className="mt-4 grid gap-2 sm:grid-cols-4">
                 {orderSteps.map((step, index) => {
                   const isDone =
-                    createdOrder.status === 'Cancelled'
+                    ['Cancelled', 'Refunded'].includes(createdOrder.status)
                       ? false
                       : activeStepIndex >= 0 && index <= activeStepIndex;
                   const isCurrent = createdOrder.status === step.key;

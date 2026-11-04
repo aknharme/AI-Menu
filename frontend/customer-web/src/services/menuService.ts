@@ -1,8 +1,8 @@
 import api from './api';
 import type { MenuResponse, ProductDetail } from '../types/menu';
 
-export async function getMenu(restaurantId: string) {
-  const response = await api.get<MenuResponse>(`/menu/${restaurantId}`);
+export async function getMenu(restaurantId: string, tableId?: string) {
+  const response = await api.get<MenuResponse>(`/menu/${restaurantId}`, { params: { tableId } });
   return response.data;
 }
 
